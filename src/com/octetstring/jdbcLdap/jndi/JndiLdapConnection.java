@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -76,7 +76,12 @@ public class JndiLdapConnection implements java.sql.Connection {
     public static final String JNDI_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
     
     /** The JNDI DSML factory*/
-    public static final String JNDI_DSML_FACTORY = "com.sun.jndi.dsml.DsmlCtxFactory";
+    public static final String JNDI_DSML_FACTORY = "com.sun.jndi.dsmlv2.soap.DsmlSoapCtxFactory";
+    
+    /** OPTIONAL - States if transaction calls should be ignored, default to false */
+    public static final String IGNORE_TRANSACTIONS = "IGNORE_TRANSACTIONS";
+  
+    
     
     /** user property */
     static final String USER  = "user";
@@ -89,6 +94,9 @@ public class JndiLdapConnection implements java.sql.Connection {
     
     /** number of characters to eliminate 'jdbc:' from the url */
     static final int ELIM_JDBC = 5;
+    
+    /** number of characters to eliminate 'jdbc:dsml: from the url */
+    static final int ELIM_JDBC_DSML = 12;
     
     /** Contains all cached statements */
     HashMap statements;
@@ -119,6 +127,12 @@ public class JndiLdapConnection implements java.sql.Connection {
     
     /** temporary string buffer */
     StringBuffer tmpBuff;
+    
+    /** determines if the connection is dsmlv2 */
+    boolean isDsml;
+    
+    /** determines if a transaction should be ignored */
+    boolean ignoreTransactions;
     
     /*
      *Public methods not part of java.sql.Connection
@@ -202,6 +216,8 @@ public class JndiLdapConnection implements java.sql.Connection {
         this.concatAtts = false;
         boolean authFound = false;
         this.tmpBuff = new StringBuffer();
+        this.ignoreTransactions = false;
+        isDsml = url.startsWith(JdbcLdapDriver.DSML_URL_ID);
         
         Enumeration en = props.propertyNames();
 //        System.out.println("JndiLdapConnection.<init>: url="+url);
@@ -209,9 +225,14 @@ public class JndiLdapConnection implements java.sql.Connection {
 //       	System.out.println("JndiLdapConnection.<init>: baseDN="+baseDN); 
         String prop;
         String user=null, pass=null ;
-        env.put(Context.INITIAL_CONTEXT_FACTORY,JNDI_FACTORY);
+        env.put(Context.INITIAL_CONTEXT_FACTORY,isDsml ? JNDI_DSML_FACTORY : JNDI_FACTORY);
 		//env.put(Context.INITIAL_CONTEXT_FACTORY,JNDI_DSML_FACTORY);
-        env.put(Context.PROVIDER_URL,url.substring(ELIM_JDBC));
+        if (isDsml) {
+        	env.put(Context.PROVIDER_URL,url.substring(ELIM_JDBC_DSML));
+        }
+        else {
+        	env.put(Context.PROVIDER_URL,url.substring(ELIM_JDBC));
+        }
         
         while (en.hasMoreElements()) {
             prop = (String) en.nextElement();
@@ -242,6 +263,8 @@ public class JndiLdapConnection implements java.sql.Connection {
             	if (props.getProperty(prop).equalsIgnoreCase("true")) {
         			env.put(Context.SECURITY_PROTOCOL, "ssl");
             	}
+            } else if (prop.equalsIgnoreCase(IGNORE_TRANSACTIONS)) {
+            		this.ignoreTransactions = props.getProperty(prop).equalsIgnoreCase("true");
             }
             else {
                 env.put(prop,props.getProperty(prop));
@@ -286,7 +309,9 @@ public class JndiLdapConnection implements java.sql.Connection {
     }
 
     public void setTransactionIsolation(int param) throws java.sql.SQLException {
-        throw new SQLException("LDAP Does Not Support Transactions");
+        	if (! this.ignoreTransactions) {
+        		throw new SQLException("LDAP Does Not Support Transactions");
+        	}
     }
     
     public boolean getAutoCommit() throws java.sql.SQLException {
@@ -303,7 +328,9 @@ public class JndiLdapConnection implements java.sql.Connection {
     }
     
     public void commit() throws java.sql.SQLException {
-        throw new SQLException("LDAP Does Not Support Transactions");
+    		if (! this.ignoreTransactions) {
+    			throw new SQLException("LDAP Does Not Support Transactions");
+    		}
     }
     
     public boolean isClosed() throws java.sql.SQLException {
@@ -327,24 +354,28 @@ public class JndiLdapConnection implements java.sql.Connection {
 		public String ldapClean(String val) {
 			
 			char c;
+			tmpBuff.setLength(0);
 			for (int i=0,m= val.length(); i<m; i++) {
 				c = val.charAt(i);
 				
 				switch (c) {
-					case ',': 
-					case '=':
-					case '+':
-					case '<':
-					case '>':
-					case '#':
-					case ';': this.tmpBuff.setLength(0);
+					case ',':  tmpBuff.append("\\,"); break;
+					case '=':	tmpBuff.append("\\="); break;
+					case '+':  tmpBuff.append("\\+"); break;
+					case '<':  tmpBuff.append("\\<"); break;
+					case '>':  tmpBuff.append("\\>"); break;
+					case '#':  tmpBuff.append("\\#"); break;
+					case ';': tmpBuff.append("\\;"); break; /*this.tmpBuff.setLength(0);
 								 tmpBuff .append('"').append(val).append('"');
-								return tmpBuff.toString();
+								System.out.println("tmpbuf : " + tmpBuff.toString());
+								 return tmpBuff.toString();*/
+					default : tmpBuff.append(c);
 				}
 			}
 			
 			
-			return val;
+			
+			return tmpBuff.toString();
 		}
     
     public void setCatalog(java.lang.String str) throws java.sql.SQLException {
@@ -383,7 +414,9 @@ public class JndiLdapConnection implements java.sql.Connection {
     }
     
     public void setAutoCommit(boolean param) throws java.sql.SQLException {
-        throw new SQLException("LDAP Does Not Support Transactions");
+    		if (! this.ignoreTransactions) {
+    			throw new SQLException("LDAP Does Not Support Transactions");
+    		}
     }
     
     public java.sql.CallableStatement prepareCall(java.lang.String str) throws java.sql.SQLException {
@@ -471,7 +504,9 @@ public class JndiLdapConnection implements java.sql.Connection {
     }
     
     public void rollback(java.sql.Savepoint savepoint) throws java.sql.SQLException {
-        throw new SQLException("LDAP Does Not Support Transactions");
+    		if (! this.ignoreTransactions) {
+    			throw new SQLException("LDAP Does Not Support Transactions");
+    		}
     }
     
 	/**

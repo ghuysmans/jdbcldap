@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -124,19 +124,22 @@ public class JdbcLdapUpdate extends com.octetstring.jdbcLdap.sql.statements.Jdbc
         end = tmpSQL.indexOf(SET);
         from = SQL.substring(begin,end).trim();
         if (from.indexOf(";") != -1) {
-            sscope = SQL.substring(begin,end).trim();        
-            iscope = (Integer) scopes.get(con.getSearchScope());
-            from = from.substring(from.indexOf(";"));
+            sscope = from.substring(0,from.indexOf(";")).trim(); 
+            //System.out.println("sscope : " + sscope);       
+            iscope = (Integer) scopes.get(sscope);
+            from = from.substring(from.indexOf(";")+1);
+            //System.out.println("from : " + from);
         }
         else {
             iscope = (Integer) scopes.get(con.getSearchScope());
         }
-        
+		
         if (iscope == null) {
             throw new SQLException("Unrecognized Search Scope");
         }
         
         scope = iscope.intValue();
+        //System.out.println("scope : " + scope);
         
         //break up the SET portion
         begin = tmpSQL.indexOf(SET) + SET.length();
@@ -169,6 +172,10 @@ public class JdbcLdapUpdate extends com.octetstring.jdbcLdap.sql.statements.Jdbc
             fields[i] = token.substring(0,token.indexOf(EQUALS));
             vals[i] = token.substring(token.indexOf(EQUALS) + 1);
             
+			//temporary
+			if (vals[i].charAt(0) == '"') {
+				vals[i] = vals[i].substring(1,vals[i].length()-1);
+			}
             
             
             if (vals[i].equals(QMARK)) {
@@ -199,8 +206,11 @@ public class JdbcLdapUpdate extends com.octetstring.jdbcLdap.sql.statements.Jdbc
         store.setArgs(args != null ? this.args.length : 0);
         store.setInsertFields(vals);
         store.setFieldOffset(offset);
+        
         store.setWhere(where);
         store.setBorder(border);
+        //System.out.println("scope : " + scope);
+        store.setScope(scope);
         
     }
     
@@ -215,6 +225,7 @@ public class JdbcLdapUpdate extends com.octetstring.jdbcLdap.sql.statements.Jdbc
         border = store.getBorder();
         args = new Object[store.getArgs()];
         vals = new String[fields.length];
+        scope = store.getScope();
 	System.arraycopy(sqlStore.getInsertFields(),0,vals,0,vals.length);
     }
     

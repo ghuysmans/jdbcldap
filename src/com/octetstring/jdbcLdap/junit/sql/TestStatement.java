@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -62,7 +62,18 @@ public class TestStatement extends junit.framework.TestCase {
         fieldsExp.add("seeAlso");
         
         LinkedList rowsExp = new LinkedList();
-        HashMap row = new HashMap();
+        HashMap row;
+		row = new HashMap();
+				row.put("sn","Dept");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Ailina");
+				rowsExp.add(row);
+		row = new HashMap();
+				row.put("sn","Poorman");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Amir");
+				rowsExp.add(row);
+        row = new HashMap();
         row.put("sn","Zimmermann");
         row.put("ou","Peons");
         row.put("seeAlso","cn=Aggy");
@@ -72,16 +83,8 @@ public class TestStatement extends junit.framework.TestCase {
         row.put("ou","Peons");
         row.put("seeAlso","cn=Agnella");
         rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Dept");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Ailina");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Poorman");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Amir");
-        rowsExp.add(row);
+        
+        
         row = new HashMap();
         row.put("sn","Hsiang");
         row.put("ou","Peons");
@@ -119,7 +122,18 @@ public class TestStatement extends junit.framework.TestCase {
         fieldsExp.add("seeAlso");
         
         LinkedList rowsExp = new LinkedList();
-        HashMap row = new HashMap();
+        HashMap row;
+		row = new HashMap();
+				row.put("sn","Dept");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Ailina");
+				rowsExp.add(row);
+		row = new HashMap();
+				row.put("sn","Poorman");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Amir");
+				rowsExp.add(row);
+        row = new HashMap();
         row.put("sn","Zimmermann");
         row.put("ou","Peons");
         row.put("seeAlso","cn=Aggy");
@@ -129,16 +143,8 @@ public class TestStatement extends junit.framework.TestCase {
         row.put("ou","Peons");
         row.put("seeAlso","cn=Agnella");
         rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Dept");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Ailina");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Poorman");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Amir");
-        rowsExp.add(row);
+        
+        
         row = new HashMap();
         row.put("sn","Hsiang");
         row.put("ou","Peons");
@@ -210,7 +216,20 @@ public class TestStatement extends junit.framework.TestCase {
         
         
         LinkedList rowsExp = new LinkedList();
-        HashMap row = new HashMap();
+        HashMap row;
+		row = new HashMap();
+				row.put("sn","Dept");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Ailina");
+				rowsExp.add(row);
+				
+		row = new HashMap();
+				row.put("sn","Poorman");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Amir");
+				rowsExp.add(row);
+				
+        row = new HashMap();
         row.put("sn","Zimmermann");
         row.put("ou","Peons");
         row.put("seeAlso","cn=Aggy");
@@ -220,16 +239,8 @@ public class TestStatement extends junit.framework.TestCase {
         row.put("ou","Peons");
         row.put("seeAlso","cn=Agnella");
         rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Dept");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Ailina");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Poorman");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Amir");
-        rowsExp.add(row);
+        
+        
         row = new HashMap();
         row.put("sn","Hsiang");
         row.put("ou","Peons");

@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -26,6 +26,7 @@ import javax.naming.directory.*;
 import com.octetstring.jdbcLdap.sql.statements.JdbcLdapInsert;
 import com.octetstring.jdbcLdap.sql.*;
 import java.sql.*;
+import com.octetstring.jdbcLdap.util.*;
 /**
  *Inserts a new entry
  *@author Marc Boorshtein, OctetString
@@ -41,17 +42,26 @@ public class Insert {
 		SqlStore store = insert.getSqlStore();
 		String[] fields = store.getFields();
 		String[] vals = insert.getVals();
-                HashMap fieldsMap = store.getFieldsMap();
+                LinkedList fieldsMap = store.getFieldsMap();
 		Iterator it;
                 String field;
-                
+        Pair p;
 		//take all attributes and add it to addition list
 		try {
-                        it = fieldsMap.keySet().iterator();
+                        it = fieldsMap.iterator();
 			while (it.hasNext()) {
-                                field = (String) it.next();
-				atts.put(new BasicAttribute(field,fieldsMap.get(field)));
+               p = (Pair) it.next();
+               field = p.getName();
+               //System.out.println("adding " + field + "=" + p.getValue());
+				if (atts.get(field) == null ) {
+				
+					atts.put(new BasicAttribute(field,p.getValue()));
+				}
+				else {
+					((BasicAttribute) atts.get(field)).add(p.getValue());
+				}
 			}
+			//System.out.println("in insert DN : " + insert.getDistinguishedName());
 			con.createSubcontext(insert.getDistinguishedName(),atts);
 		}
 		catch (NamingException ne) {

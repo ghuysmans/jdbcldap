@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -24,9 +24,11 @@ import junit.framework.*;
 import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSelect;
 import com.octetstring.jdbcLdap.jndi.*;
 import com.octetstring.jdbcLdap.sql.*;
+import com.octetstring.jdbcLdap.util.*;
 import com.octetstring.jdbcLdap.sql.statements.*;
 import java.sql.*;
 import javax.naming.directory.*;
+
 
 /**
  *Tests the parsing of a SELECT statement
@@ -49,7 +51,7 @@ public class TestInsert extends junit.framework.TestCase {
     
     	protected void setUp() throws java.lang.Exception {
         	Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver");
-			con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope",System.getProperty("ldapUser"),System.getProperty("ldapPass"));
+			con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?CONCAT_ATTS:=true&SEARCH_SCOPE:=subTreeScope",System.getProperty("ldapUser"),System.getProperty("ldapPass"));
     	}
     
 	public void testParseStatement() throws Exception {
@@ -116,7 +118,7 @@ public class TestInsert extends junit.framework.TestCase {
 			fail("bad cn : " + rs.getString("cn"));
 		}
 		System.out.println("DN : " + rs.getString("DN"));
-		if (! rs.getString("DN").equals("cn=\"Marc Boorshtein, OctetString\",ou=Product Development,dc=idrs,dc=com")) {
+		if (! rs.getString("DN").equals("cn=Marc Boorshtein\\, OctetString,ou=Product Development,dc=idrs,dc=com")) {
 			fail("bad dn : " + rs.getString("DN"));
 		}
 	}
@@ -124,7 +126,7 @@ public class TestInsert extends junit.framework.TestCase {
 	public void testInsertStatement() throws Exception {
 		System.out.println("entering testInsert");
 		doDelete = true;
-		String SQL = "INSERT INTO cn=\"Marc Boorshtein, OctetString\", ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,Boorshtein,\"Marc Boorshtein, OctetString\")";
+		String SQL = "INSERT INTO cn=Marc Boorshtein\\, OctetString, ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,Boorshtein,\"Marc Boorshtein, OctetString\")";
 		Statement stmt = con.createStatement();
 		int res = stmt.executeUpdate(SQL);
 		if (res < 1) {
@@ -139,7 +141,7 @@ public class TestInsert extends junit.framework.TestCase {
 			fail("bad cn : " + rs.getString("cn"));
 		}
 		System.out.println("DN : " + rs.getString("DN"));
-		if (! rs.getString("DN").equals("cn=\"Marc Boorshtein, OctetString\",ou=Product Development,dc=idrs,dc=com")) {
+		if (! rs.getString("DN").equals("cn=Marc Boorshtein\\, OctetString,ou=Product Development,dc=idrs,dc=com")) {
 			fail("bad dn : " + rs.getString("DN"));
 		}
 		System.out.println("leasving testInsert");
@@ -149,7 +151,7 @@ public class TestInsert extends junit.framework.TestCase {
 		
 		
 		doDelete = true;
-		String SQL = "INSERT INTO cn=\"Marc Boorshtein, OctetString\",ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,?,?)";
+		String SQL = "INSERT INTO cn=Marc Boorshtein\\, OctetString,ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,?,?)";
 		PreparedStatement stmt = con.prepareStatement(SQL);
 		stmt.setString(1,"Marc");
 		stmt.setString(2,"Marc Boorshtein, OctetString");
@@ -171,12 +173,12 @@ public class TestInsert extends junit.framework.TestCase {
 			fail("bad cn : " + rs.getString("cn"));
 		}
 		System.out.println("DN : " + rs.getString("DN"));
-		if (! rs.getString("DN").equals("cn=\"Marc Boorshtein, OctetString\",ou=Product Development,dc=idrs,dc=com")) {
+		if (! rs.getString("DN").equals("cn=Marc Boorshtein\\, OctetString,ou=Product Development,dc=idrs,dc=com")) {
 			fail("bad dn : " + rs.getString("DN"));
 		}
 	}
         
-        public void testInsertPreparedStatementParamInInto() throws Exception {
+    public void testInsertPreparedStatementParamInInto() throws Exception {
 		doDelete = true;
 		String SQL = "INSERT INTO cn,ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,?,?)";
 		PreparedStatement stmt = con.prepareStatement(SQL);
@@ -200,8 +202,54 @@ public class TestInsert extends junit.framework.TestCase {
 			fail("bad cn : " + rs.getString("cn"));
 		}
 		System.out.println("DN : " + rs.getString("DN"));
-		if (! rs.getString("DN").equals("cn=\"Marc Boorshtein, OctetString\",ou=Product Development,dc=idrs,dc=com")) {
+		if (! rs.getString("DN").equals("cn=Marc Boorshtein\\, OctetString,ou=Product Development,dc=idrs,dc=com")) {
 			fail("bad dn : " + rs.getString("DN"));
 		}
 	}
+    
+    public void testInsertMultiValued() throws Exception {
+		doDelete = true;
+		String SQL = "INSERT INTO cn,ou=Product Development (objectClass,objectClass,objectClass,sn,cn,sn) VALUES (top,person,organizationalPerson,?,?,?)";
+		PreparedStatement stmt = con.prepareStatement(SQL);
+		stmt.setString(1,"Marc");
+		stmt.setString(2,"Marc Boorshtein, OctetString");
+		stmt.setString(3,"Lance");
+		
+		int res = stmt.executeUpdate();
+		/*
+		String SQL = "INSERT INTO cn=Marc Boorshtein, OctetString,ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,Boorshtein,Marc Boorshtein, OctetString)";
+		Statement stmt = con.createStatement();
+		int res = stmt.executeUpdate(SQL);*/
+
+		if (res < 1) {
+			fail("no rows updated");
+		}
+
+		PreparedStatement ps = con.prepareStatement("SELECT DN,sn,cn FROM ou=Product Development WHERE cn=Marc Boorshtein, OctetString");
+		ResultSet rs = ps.executeQuery();
+//		rs.next();
+//
+//		if (! rs.getString("cn").equals("Marc Boorshtein, OctetString")) {
+//			fail("bad cn : " + rs.getString("cn"));
+//		}
+//		System.out.println("DN : " + rs.getString("DN"));
+//		if (! rs.getString("DN").equals("cn=Marc Boorshtein\\, OctetString,ou=Product Development,dc=idrs,dc=com")) {
+//			fail("bad dn : " + rs.getString("DN"));
+//		}
+		String expected = "dn: cn=Marc Boorshtein\\, OctetString,ou=Product Development,dc=idrs,dc=com";
+		expected += "\ncn: Marc Boorshtein, OctetString";
+		expected += "\nsn: Marc";
+		expected += "\nsn: Lance";
+		
+		LDIF expLdif = new LDIF(expected,true);
+		//System.out.println("expLdif :  " + expLdif);
+		
+		LDIF found = new LDIF(rs,"DN",true);
+		//System.out.println("found :  " + expLdif);
+		LDIF dif = new LDIF();
+		if (! found.compareLdif(expLdif,dif)) {
+			fail("Results Don't Match : \nexpected:\n" + expLdif + "\nfound:\n" + found.toString());
+		}
+    	
+    }
 }

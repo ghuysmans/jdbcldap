@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -51,6 +51,7 @@ public class Update {
         try {
             
             NamingEnumeration enum = res.searchUpIns(update);
+            //System.out.println("enum.hasMore : " + enum.hasMore());
             while (enum.hasMore()) {
                 seres = (SearchResult) enum.next();
                 buf.setLength(0);
@@ -62,6 +63,8 @@ public class Update {
                 else {
 					name = store.getDistinguishedName();
                 }
+                
+                //System.out.println("name : " + name);
                 
                 
                 con.modifyAttributes(name,mods);

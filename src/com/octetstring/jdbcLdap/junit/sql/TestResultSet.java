@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -55,6 +55,8 @@ public class TestResultSet extends junit.framework.TestCase {
      */
     public void testGetResultSet() throws Exception {
         String sql = "SELECT sn,ou,seeAlso FROM  WHERE ou=Peons AND cn=A*";
+        
+		        
         JdbcLdapSelect sel = new JdbcLdapSelect();
         sel.init(con,sql);
         String field;
@@ -67,14 +69,28 @@ public class TestResultSet extends junit.framework.TestCase {
         
         LdapResultSet rs = new LdapResultSet(con,null,pack.getRows(),pack.getFieldNames(),sel.getBaseContext(),pack.getFieldTypes());
         
+        
         LinkedList fieldsExp = new LinkedList();
+        
         
         fieldsExp.add("sn");
         fieldsExp.add("ou");
         fieldsExp.add("seeAlso");
         
         LinkedList rowsExp = new LinkedList();
-        HashMap row = new HashMap();
+        HashMap row;
+        
+		row = new HashMap();
+				row.put("sn","Dept");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Ailina");
+				rowsExp.add(row);
+		row = new HashMap();
+				row.put("sn","Poorman");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Amir");
+				rowsExp.add(row);
+        row = new HashMap();
         row.put("sn","Zimmermann");
         row.put("ou","Peons");
         row.put("seeAlso","cn=Aggy");
@@ -84,16 +100,8 @@ public class TestResultSet extends junit.framework.TestCase {
         row.put("ou","Peons");
         row.put("seeAlso","cn=Agnella");
         rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Dept");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Ailina");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Poorman");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Amir");
-        rowsExp.add(row);
+        
+        
         row = new HashMap();
         row.put("sn","Hsiang");
         row.put("ou","Peons");
@@ -118,7 +126,7 @@ public class TestResultSet extends junit.framework.TestCase {
      *Test all implemented getXXX Methods
      */
     public void testGetMethods() throws Exception {
-        String sql = "SELECT sn,ou,seeAlso,l,description,title FROM  WHERE ou=Peons AND cn=A*";
+        String sql = "SELECT sn,ou,seeAlso,l,description,title FROM  WHERE ou=Peons AND cn=Aggy Zimmermann";
         JdbcLdapSelect sel = new JdbcLdapSelect();
         sel.init(con,sql);
         String field;
@@ -275,6 +283,8 @@ public class TestResultSet extends junit.framework.TestCase {
             
             while (itFields.hasNext()) {
                 field = (String) itFields.next();
+                System.out.println("field : " + field);
+                System.out.println("equal? " + row.get(field) + "==" + rs.getString(field));
                 if (! row.get(field).equals(rs.getString(field))) {
                     return false;
                 }

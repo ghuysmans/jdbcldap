@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -26,6 +26,7 @@ import java.sql.*;
 import java.util.*;
 import javax.naming.*;
 import javax.naming.directory.*;
+import com.octetstring.jdbcLdap.util.*;
 
 /**
  *Stores the information needed to process a SELECT statement
@@ -34,6 +35,8 @@ import javax.naming.directory.*;
 public class JdbcLdapInsert
 	extends com.octetstring.jdbcLdap.sql.statements.JdbcLdapSqlAbs
 	implements com.octetstring.jdbcLdap.sql.statements.JdbcLdapSql {
+
+	
 
 	/** Insertion Identifier */
 	static final String INSERT_INTO = "insert into";
@@ -65,8 +68,8 @@ public class JdbcLdapInsert
 	/** dn field array */
 	String[] dnFields;
 
-	/** Contains map of fields */
-	HashMap fieldsMap;
+	/** Contains list of fields */
+	LinkedList fieldsMap;
 
 	/** Connection to LDAP server */
 	JndiLdapConnection con;
@@ -93,7 +96,7 @@ public class JdbcLdapInsert
 
 	/** Creates new JdbcLdapSql using a connection and a SQL Statement*/
 	public void init(JndiLdapConnection con, String SQL) throws SQLException {
-
+		LinkedList tmpvals;
 		String tmp;
 		String tmpSQL = SQL.toLowerCase();
 		int begin, end;
@@ -117,10 +120,11 @@ public class JdbcLdapInsert
 		it = ltoks.iterator();
 		for (i = 0; it.hasNext(); i++) {
 			dnFields[i] = (String) it.next();
+			
 			//System.out.println(dnFields[i]);
 		}
 
-		fieldsMap = new HashMap();
+		fieldsMap = new LinkedList();
 
 		//retrieve fields to insert
 		begin = end + 1;
@@ -131,6 +135,7 @@ public class JdbcLdapInsert
 		fields = new String[tok.countTokens()];
 		for (i = 0; tok.hasMoreTokens(); i++) {
 			fields[i] = tok.nextToken();
+			//System.out.println("fields : " + fields[i]);
 		}
 
 		//retrieves the field values and builds offset
@@ -149,17 +154,30 @@ public class JdbcLdapInsert
 		for (i = 0, j = 0; it.hasNext(); i++) {
 			vals[i] = (String) it.next();
 			
+			//temporary
+			if (vals[i].charAt(0) == '"') {
+				vals[i] = vals[i].substring(1,vals[i].length()-1);
+			}
+			
 			//System.out.println(vals[i]);
+			
+			
+			
 			if (vals[i].equals(QMARK)) {
+				
 				offset[j++] = i;
+				//System.out.println("j : " + j + " i : " + i + " fields[i] : " + fields[i]);
+				
 			}
 			else if (vals[i].charAt(0) == QUOTE) {
 				vals[i] = vals[i].substring(1,vals[i].length()-2);
 				
 			}
-			 else {
-				fieldsMap.put(fields[i], vals[i]);
-			}
+			 //else {
+			fieldsMap.add(new Pair(fields[i],vals[i]));
+			 	
+				
+			//}
 		}
 		//System.out.println("end fields");
 
@@ -186,8 +204,8 @@ public class JdbcLdapInsert
 		System.arraycopy(sqlStore.getInsertFields(), 0, vals, 0, vals.length);
 		offset = sqlStore.getFieldOffset();
 		this.dnFields = sqlStore.getDnFields();
-		this.fieldsMap = new HashMap();
-		fieldsMap.putAll(store.getFieldsMap());
+		this.fieldsMap = new LinkedList();
+		fieldsMap.addAll(store.getFieldsMap());
 
 	}
 
@@ -207,9 +225,11 @@ public class JdbcLdapInsert
 	 *@param val Value to set
 	 */
 	public void setValue(int pos, String value) throws SQLException {
-		if (pos < 0 || pos > vals.length)
-			throw new SQLException(Integer.toString(pos) + " out of bounds");
-		fieldsMap.put(fields[offset[pos]], value);
+		
+		//if (pos < 0 || pos > fieldsMap.size())
+		//	throw new SQLException(Integer.toString(pos) + " out of bounds");
+		((Pair) fieldsMap.get(offset[pos])).setValue(value);
+		//fieldsMap.put(fields[offset[pos]], value);
 	}
 
 	/**
@@ -257,14 +277,40 @@ public class JdbcLdapInsert
 	 */
 	public String getDistinguishedName() {
 		StringBuffer fdn = new StringBuffer();
-
+		
+		HashMap track = new HashMap();
+		Integer loc;
+		int start;
+		String val;
+		Object[] fields = fieldsMap.toArray();
+		
 		for (int i = 0; i < this.dnFields.length; i++) {
 			if (dnFields[i].indexOf('=') != -1) {
 				fdn.append(dnFields[i]).append(COMMA);
 			} else {
+				val = "";
+				if (track.containsKey(dnFields[i])) {
+					start = ((Integer) track.get(dnFields[i])).intValue() + 1;
+				}
+				else {
+					start = 0;
+				}
+				
+				for (int j=start,m=fields.length;j<m;j++) {
+					if (((Pair) fields[j]).getName().equalsIgnoreCase(dnFields[i])) {
+						track.put(dnFields[i],new Integer(j));
+						val = ((Pair) fields[j]).getValue();
+						break;
+					}
+				}
+				
+				
+				
 				fdn.append(dnFields[i]).append('=').append(
-					con.ldapClean((String) fieldsMap.get(dnFields[i])) ).append(
+					con.ldapClean(val)).append(
 					COMMA);
+				//TODO This HAS to be fixed
+				
 			}
 		}
 		String finalDN = fdn.toString();

@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -34,6 +34,9 @@ public class JdbcLdapDriver implements java.sql.Driver {
     /** Identifies the URL prefix */
     public static final String URL_ID = "jdbc:ldap";
     
+    /** Identifies the URL prefix for DSMLv2 Connections */
+    public static final String DSML_URL_ID = "jdbc:dsml";
+    
     /**Major Version of driver */
     public static final int MAJOR_VERSION = 0;
     
@@ -66,11 +69,15 @@ public class JdbcLdapDriver implements java.sql.Driver {
      *Accepts URLs in the form ldap://host:port/basedn
      */
     public boolean acceptsURL(java.lang.String str) throws java.sql.SQLException {
-        return str.substring(0,9).equalsIgnoreCase(URL_ID);
+        return str.substring(0,9).equalsIgnoreCase(URL_ID) || str.substring(0,9).equalsIgnoreCase(DSML_URL_ID);
     }
     
     public java.sql.Connection connect(java.lang.String str, java.util.Properties properties) throws java.sql.SQLException {
-        String props;
+	    	if (!acceptsURL(str))
+	    	{
+	    		return null;
+	    	}
+    		String props;
         StringTokenizer toker;
         String prop, val,token;
         int seperator = str.indexOf("?");

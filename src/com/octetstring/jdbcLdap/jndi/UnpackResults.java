@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -32,6 +32,17 @@ import java.sql.*;
  *@author Marc Boorshtein, OctetString
  */
 public class UnpackResults {
+	static final String HEX_COMMA="\\2C";
+	static final String HEX_PLUS="\\2B";
+	static final String HEX_DBL_QUOTE="\\22";
+	static final String HEX_BACK_SLASH="\\5C";
+	static final String HEX_LESS="\\3C";
+	static final String HEX_MORE="\\3E";
+	static final String HEX_SEMI_COLON="\\3B";
+	static final HashMap HEX_TO_STRING;
+	
+	
+	
 	/** DN attribute name */
 	static final String DN_ATT = "DN";
 
@@ -44,6 +55,18 @@ public class UnpackResults {
 	/** List of rows */
 	LinkedList rows;
 
+	static {
+		HEX_TO_STRING = new HashMap();
+		HEX_TO_STRING.put(HEX_COMMA,"\\,");
+		HEX_TO_STRING.put(HEX_PLUS,"\\+");
+		HEX_TO_STRING.put(HEX_DBL_QUOTE,"\\\"");
+		HEX_TO_STRING.put(HEX_BACK_SLASH,"\\\\");
+		HEX_TO_STRING.put(HEX_LESS,"\\<");
+		HEX_TO_STRING.put(HEX_MORE,"\\>");
+		HEX_TO_STRING.put(HEX_SEMI_COLON,"\\;");
+		
+	}
+	
 	/** Creates new UnpackResults */
 	public UnpackResults(JndiLdapConnection con) {
 		this.con = con;
@@ -162,8 +185,16 @@ public class UnpackResults {
 						names.put(field.name, field);
 					}
 					buff.setLength(0);
-					buff.append(res.getName()).append(base);
-					if (buff.charAt(0) == ',')
+					//TODO, need to be able to handle unicode strings....
+					/*try {
+						System.out.println("in unpack dn : " + cleanDn(res.getName()));
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+					}*/
+					
+					buff.append(cleanDn(res.getName())).append(base);
+					if (buff.length() > 0 && buff.charAt(0) == ',')
 						buff.deleteCharAt(0);
 					// System.out.println("Unpack: dn="+buff);
 
@@ -278,5 +309,23 @@ public class UnpackResults {
 			throw new SQLNamingException(e);
 		}
 	}
+	
+	public String cleanDn(String dn) {
+		StringBuffer buf = new StringBuffer(dn);
+		int begin,end;
+		begin = buf.indexOf("\\");
+		String val;
+		while (begin != -1) {
+			val = (String) UnpackResults.HEX_TO_STRING.get(buf.substring(begin,begin+3));
+			if (val != null) {
+				buf.replace(begin,begin+3,val);
+			}
+			begin = begin = buf.indexOf("\\",begin + 1);
+		}
+		
+		return buf.toString();
+	}
+	
+	
 
 }

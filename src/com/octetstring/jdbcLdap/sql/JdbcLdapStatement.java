@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -58,6 +58,12 @@ public class JdbcLdapStatement implements java.sql.Statement {
 
 	/** Represents the length of an insert */
 	static final int UPDATE_LEN = 6;
+	
+	/** Represents an UPDATE ENTRY statement */
+	static final String UPDATE_ENTRY = "update entry";
+	
+	/** Represents the length of the UPDATE ENTRY statement */
+	static final int UPDATE_ENTRY_LEN = 12;
 
 	/** Stores batch of statements */
 	LinkedList statements;
@@ -89,12 +95,15 @@ public class JdbcLdapStatement implements java.sql.Statement {
 	void loadSQL(String sql) throws SQLException {
 		String sqll = sql.toLowerCase().trim();
 		SqlStore sqlStore = con.getCache(sql);
-
+		//System.out.println(" sqll : " + sqll.substring(0, UPDATE_ENTRY_LEN) );
 		if (sqll.substring(0, SELECT_LEN).equals(SELECT)) {
 			this.stmt = new JdbcLdapSelect();
 		} else if (sqll.substring(0, INSERT_LEN).equals(INSERT)) {
 			this.stmt = new JdbcLdapInsert();
-		} else if (sqll.substring(0, DELETE_LEN).equals(DELETE)) {
+		} else if (sqll.substring(0, UPDATE_ENTRY_LEN).equals(UPDATE_ENTRY)) {
+			this.stmt = new JdbcLdapUpdateEntry();
+		}
+		 else if (sqll.substring(0, DELETE_LEN).equals(DELETE)) {
 			this.stmt = new JdbcLdapDelete();
 		} else if (sqll.substring(0, UPDATE_LEN).equals(UPDATE)) {
 			this.stmt = new JdbcLdapUpdate();

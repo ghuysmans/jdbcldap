@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -96,7 +96,7 @@ public class RetrieveResults {
             DirContext con = sql.getContext();
             SearchControls ctls = new SearchControls();
             int num;
-            
+            //System.out.println("Search Scope : " + sql.getSearchScope());
             ctls.setSearchScope(sql.getSearchScope());
             
             num = sql.getTimeOut();
@@ -104,7 +104,9 @@ public class RetrieveResults {
             
             String filter = sql.getFilterWithParams();
             
-	    
+//	    	System.out.println("sql.getBaseContext() " + sql.getBaseContext());
+//	    	System.out.println("where : " + filter);
+//	    	System.out.println("scope  : " + sql.getSearchScope());
             return con.search(sql.getBaseContext(), filter ,ctls);
         }
         catch (NamingException e) {

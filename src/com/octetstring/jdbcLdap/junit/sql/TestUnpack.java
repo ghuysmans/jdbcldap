@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -23,6 +23,7 @@ import junit.framework.*;
 import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSelect;
 import com.octetstring.jdbcLdap.jndi.*;
 import com.octetstring.jdbcLdap.sql.*;
+import com.octetstring.jdbcLdap.util.*;
 import java.sql.*;
 import javax.naming.directory.*;
 import javax.naming.*;
@@ -62,6 +63,7 @@ public class TestUnpack extends junit.framework.TestCase {
         String field;
         
         
+        
         NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
         
         UnpackResults pack = new UnpackResults(con);
@@ -93,35 +95,78 @@ public class TestUnpack extends junit.framework.TestCase {
             }
         }
         
+        
+        
+        
+        
+		String cmpLdif; 
+		cmpLdif = "dn: cn=Audi Hsiang,ou=Peons,dc=idrs,dc=com\n";
+		cmpLdif += "sn: Hsiang\n";
+		cmpLdif += "ou: Peons\n";
+		cmpLdif += "seeAlso: cn=Audi\n\n";
+        
+		cmpLdif = "dn: cn=Agnella Security,ou=Peons,dc=idrs,dc=com\n";
+		cmpLdif += "sn: Security\n";
+		cmpLdif += "ou: Peons\n";
+		cmpLdif += "seeAlso: cn=Agnella\n\n";
+		
+		cmpLdif = "dn: cn=Aggy Zimmermann,ou=Peons,dc=idrs,dc=com\n";
+		cmpLdif += "sn: Zimmermann\n";
+		cmpLdif += "ou: Peons\n";
+		cmpLdif += "seeAlso: cn=Aggy\n\n";
+
+		cmpLdif = "dn: cn=Ailina Dept,ou=Peons,dc=idrs,dc=com\n";
+		cmpLdif += "sn: Dept\n";
+		cmpLdif += "ou: Peons\n";
+		cmpLdif += "seeAlso: cn=Ailina\n\n";
+		
+		cmpLdif = "dn: cn=Amir Poorman,ou=Peons,dc=idrs,dc=com\n";
+		cmpLdif += "sn: Poorman\n";
+		cmpLdif += "ou: Peons\n";
+		cmpLdif += "seeAlso: cn=Amir";
+		
+		
         LinkedList rowsExp = new LinkedList();
-        HashMap row = new HashMap();
-        row.put("sn","Zimmermann");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Aggy");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Security");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Agnella");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Dept");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Ailina");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Poorman");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Amir");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Hsiang");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Audi");
-        rowsExp.add(row);
+        HashMap row ;
+		row = new HashMap();
+		row.put("sn","Dept");
+		row.put("ou","Peons");
+		row.put("seeAlso","cn=Ailina");
+		rowsExp.add(row);
+		row = new HashMap();
+		row.put("sn","Poorman");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Amir");
+				rowsExp.add(row);
+		
+		row = new HashMap();
+				row.put("sn","Zimmermann");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Aggy");
+				rowsExp.add(row);
+		row = new HashMap();
+				row.put("sn","Security");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Agnella");
+				rowsExp.add(row);
+				
+				row = new HashMap();
+		
+		row.put("sn","Hsiang");
+		row.put("ou","Peons");
+		row.put("seeAlso","cn=Audi");
+		rowsExp.add(row);
+		
+        
+        
+        
+        
         
         LinkedList rows = pack.getRows();
         
+		
+		
+		
         assertTrue("Tables Don't Match\n\n" + this.formTable(rowsExp) + "\n\n" + this.formTable(rows),compareTables(fieldsExp,rowsExp,rows));
         
         
@@ -251,7 +296,23 @@ public class TestUnpack extends junit.framework.TestCase {
         }
         
         LinkedList rowsExp = new LinkedList();
-        HashMap row = new HashMap();
+        HashMap row;
+        
+        row = new HashMap();
+		row.put("objectClass","[top][person][organizationalPerson]");
+		row.put("sn","Dept");
+		row.put("ou","Peons");
+		row.put("seeAlso","cn=Ailina");
+		rowsExp.add(row);        
+		row = new HashMap();
+		row.put("objectClass","[top][person][organizationalPerson]");
+		row.put("sn","Poorman");
+		row.put("ou","Peons");
+		row.put("seeAlso","cn=Amir");
+		rowsExp.add(row);
+        
+        
+        row = new HashMap();
         row.put("objectClass","[top][person][organizationalPerson]");
         row.put("sn","Zimmermann");
         row.put("ou","Peons");
@@ -263,20 +324,10 @@ public class TestUnpack extends junit.framework.TestCase {
         row.put("ou","Peons");
         row.put("seeAlso","cn=Agnella");
         rowsExp.add(row);
+        
+
         row = new HashMap();
-        row.put("objectClass","[top][person][organizationalPerson]");
-        row.put("sn","Dept");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Ailina");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("objectClass","[top][person][organizationalPerson]");
-        row.put("sn","Poorman");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Amir");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("objectClass","[top][person][organizationalPerson]");
+        row.put("objectClass","[top][person][inetOrgPerson]");
         row.put("sn","Hsiang");
         row.put("ou","Peons");
         row.put("seeAlso","cn=Audi");
@@ -346,42 +397,49 @@ public class TestUnpack extends junit.framework.TestCase {
         }
         
         LinkedList rowsExp = new LinkedList();
-        HashMap row = new HashMap();
-        row.put("objectClass_0","top");
-        row.put("objectClass_1","person");
-        row.put("objectClass_2","organizationalPerson");
-        row.put("sn","Zimmermann");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Aggy");
-        rowsExp.add(row);
+        HashMap row;
+        
+		row = new HashMap();
+		row.put("objectClass_0","top");
+		row.put("objectClass_1","person");
+		row.put("objectClass_2","organizationalPerson");
+		row.put("sn","Dept");
+		row.put("ou","Peons");
+		row.put("seeAlso","cn=Ailina");
+		rowsExp.add(row);
+		row = new HashMap();
+		row.put("objectClass_0","top");
+		row.put("objectClass_1","person");
+		row.put("objectClass_2","organizationalPerson");
+		row.put("sn","Poorman");
+		row.put("ou","Peons");
+		row.put("seeAlso","cn=Amir");
+		rowsExp.add(row);
+		row = new HashMap();
+				row.put("objectClass_0","top");
+				row.put("objectClass_1","person");
+				row.put("objectClass_2","organizationalPerson");
+				row.put("sn","Zimmermann");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Aggy");
+				rowsExp.add(row);
+		row = new HashMap();
+		row.put("objectClass_0","top");
+		row.put("objectClass_1","person");
+		row.put("objectClass_2","organizationalPerson");
+		row.put("sn","Security");
+		row.put("ou","Peons");
+		row.put("seeAlso","cn=Agnella");
+		rowsExp.add(row);
+        
+        row = new HashMap();
+
+
+
         row = new HashMap();
         row.put("objectClass_0","top");
         row.put("objectClass_1","person");
-        row.put("objectClass_2","organizationalPerson");
-        row.put("sn","Security");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Agnella");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("objectClass_0","top");
-        row.put("objectClass_1","person");
-        row.put("objectClass_2","organizationalPerson");
-        row.put("sn","Dept");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Ailina");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("objectClass_0","top");
-        row.put("objectClass_1","person");
-        row.put("objectClass_2","organizationalPerson");
-        row.put("sn","Poorman");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Amir");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("objectClass_0","top");
-        row.put("objectClass_1","person");
-        row.put("objectClass_2","organizationalPerson");
+        row.put("objectClass_2","inetOrgPerson");
         row.put("sn","Hsiang");
         row.put("ou","Peons");
         row.put("seeAlso","cn=Audi");
@@ -441,7 +499,19 @@ public class TestUnpack extends junit.framework.TestCase {
         }
         
         LinkedList rowsExp = new LinkedList();
-        HashMap row = new HashMap();
+        HashMap row;
+        
+		row = new HashMap();
+		row.put("sn","Dept");
+		row.put("ou","Peons");
+		row.put("seeAlso","cn=Ailina");
+		rowsExp.add(row);
+		row = new HashMap();
+		row.put("sn","Poorman");
+		row.put("ou","Peons");
+		row.put("seeAlso","cn=Amir");
+		rowsExp.add(row);        
+        row = new HashMap();
         row.put("sn","Zimmermann");
         row.put("ou","Peons");
         row.put("seeAlso","cn=Aggy");
@@ -451,16 +521,8 @@ public class TestUnpack extends junit.framework.TestCase {
         row.put("ou","Peons");
         row.put("seeAlso","cn=Agnella");
         rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Dept");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Ailina");
-        rowsExp.add(row);
-        row = new HashMap();
-        row.put("sn","Poorman");
-        row.put("ou","Peons");
-        row.put("seeAlso","cn=Amir");
-        rowsExp.add(row);
+
+
         row = new HashMap();
         row.put("sn","Hsiang");
         row.put("ou","Peons");

@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -22,6 +22,7 @@ package com.octetstring.jdbcLdap.jndi;
 
 import java.sql.*;
 import javax.naming.*;
+
 
 /**
  *Translates a JndiException to a SQLException
@@ -104,6 +105,10 @@ public class SQLNamingException extends java.sql.SQLException {
     
     public void setNextException(java.sql.SQLException sQLException) {
         
+    }
+    
+    public NamingException getNamingException() {
+    	return this.e;
     }
     
 }

@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -57,11 +57,28 @@ public class SqlStore {
     /** argumnet in border of SET and WHERE */
     int border;
     
-    /** Hashmap of field, value pairs */
-    HashMap fieldsMap;
+    /** List of field, value pairs */
+    LinkedList fieldsMap;
     
     /** Contains fields of a DN */
     String[] dnfields;
+    
+    /** Stores a modify command */
+    String command;
+    
+    /** stores the arguments to be handled */
+    LinkedList attribs;
+    
+    
+    
+    
+    
+	/** stores modify commands */
+	LinkedList cmds;
+   
+	/** Stores a list of offsets */
+	ArrayList offsetList;
+    
     
     /**
      *Creates a new SqlStore
@@ -260,7 +277,7 @@ public class SqlStore {
       *Sets the fields Map
       *@param fieldsMap The Map
       */
-     public void setFieldsMap(HashMap fieldsMap) {
+     public void setFieldsMap(LinkedList fieldsMap) {
          this.fieldsMap = fieldsMap;
      }
      
@@ -268,7 +285,7 @@ public class SqlStore {
       *Returns the field,value map
       *@return map
       */
-     public HashMap getFieldsMap() {
+     public LinkedList getFieldsMap() {
          return this.fieldsMap;
      }
      
@@ -287,4 +304,72 @@ public class SqlStore {
      public String[] getDnFields() {
          return this.dnfields;
      }
+     
+	/**
+	 * Retrieves a modify's command
+	 * @return The command
+	 */
+	public String getCommand() {
+		return command;
+	}
+
+	/**
+	 * Sets a modify's command
+	 * @param cmd The command
+	 */
+	public void setCommand(String cmd) {
+		command = cmd;
+	}
+
+	/**
+	 * @return
+	 */
+	public LinkedList getAttribs() {
+		return attribs;
+	}
+
+	
+
+	
+
+	
+
+	/**
+	 * @param list
+	 */
+	public void setAttribs(LinkedList list) {
+		attribs = list;
+	}
+
+	
+	
+
+	/**
+	 * @return
+	 */
+	public LinkedList getCmds() {
+		return cmds;
+	}
+
+	/**
+	 * @param list
+	 */
+	public void setCmds(LinkedList list) {
+		cmds = list;
+	}
+
+	/**
+	 * @return Returns the offsetList.
+	 */
+	public ArrayList getOffsetList() {
+		return offsetList;
+	}
+
+	/**
+	 * @param offsetList The offsetList to set.
+	 */
+	public void setOffsetList(ArrayList offsetList) {
+		this.offsetList = offsetList;
+	}
+
 }
