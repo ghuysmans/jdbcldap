@@ -46,20 +46,32 @@ public class RetrieveResults {
             String[] fields = select.getSearchAttributes();
             fields = fields != null ? fields : new String[0];
             
-            ArrayList ar = new ArrayList();
             
-            
-            for (int i=0, m=fields.length;i<m;i++) {
-            	if (! fields[i].equalsIgnoreCase("dn")) {
-            		ar.add(fields[i]);
-            	}
+			String[] searchAttribs;
+			
+            if (fields.length == 1 && fields[0].equalsIgnoreCase("dn")) {
+            	searchAttribs = new String[] {"1.1"};	
+            	
+            }
+            else {
+				ArrayList ar = new ArrayList();
+
+
+				for (int i=0, m=fields.length;i<m;i++) {
+					if (! fields[i].equalsIgnoreCase("dn")) {
+						ar.add(fields[i]);
+					}
+				}
+
+				searchAttribs = new String[ar.size()];
+
+				System.arraycopy(ar.toArray(),0,searchAttribs,0,ar.size());	
             }
             
-            String[] searchAttribs = new String[ar.size()];
             
-            System.arraycopy(ar.toArray(),0,searchAttribs,0,ar.size());
             
              
+            
             
             ctls.setReturningAttributes(searchAttribs.length != 0 ? searchAttribs : null);
             ctls.setSearchScope(select.getSearchScope());

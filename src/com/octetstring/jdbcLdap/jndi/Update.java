@@ -43,7 +43,7 @@ public class Update {
         mods = new ModificationItem[store.getFields().length];
         fields = store.getFields();
         vals = update.getVals();
-        
+        String name;
         for (int i=0,m=mods.length;i<m;i++) {
             mods[i] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE,new BasicAttribute(fields[i],vals[i]));
         }
@@ -55,7 +55,16 @@ public class Update {
                 seres = (SearchResult) enum.next();
                 buf.setLength(0);
                 
-                con.modifyAttributes(buf.append(seres.getName()).append(',').append(store.getDistinguishedName()).toString(),mods);
+                if (seres.getName().trim().length() > 0) {
+                
+                	name = buf.append(seres.getName()).append(',').append(store.getDistinguishedName()).toString();
+                }
+                else {
+					name = store.getDistinguishedName();
+                }
+                
+                
+                con.modifyAttributes(name,mods);
                 count++;
                 //System.out.println("count : " + count);
             }
