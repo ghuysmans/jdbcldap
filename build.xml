@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- Created by mlb on March 8, 2002, 11:12 PM -->
+
+<project basedir="." default="build" name="jdbcLdap">
+    <target description="Initializes properties" name="init">
+		<property name="example" value="example"/>
+		<property name="src" value="src"/>
+		<property name="classes" value="classes"/>
+		<property name="jars" value="bin"/>
+		<property name="lib" value="lib"/>
+		<property name="docsdir" value="docs"/>
+                <property name="reports.tests" value="testResults"/>
+                <property name="test.ldapConnString" value="jdbc:ldap://localhost:389/dc=idrs,dc=com"/>
+    </target>
+
+    <target depends="init" name="build" description="Builds the drivers" >
+        <mkdir dir="${classes}"/>
+        <javac destdir="${classes}" includes="com/octetstring/**" srcdir="${src}">
+            <classpath>
+                <pathelement location="${lib}/junit.jar" />
+            </classpath>
+        </javac>
+    </target>
+
+    <target depends="init" description="jars the classes into the bin directory and copys the jar to the lib directory" name="jar">
+        <mkdir dir="${jars}"/>
+	<delete file="${jars}/jdbcLdap.jar"/>
+	<jar jarfile="${jars}/jdbcLdap.jar">
+            <fileset dir="${classes}" includes="**/*.class" excludes="**/TestSQL.class"/>
+	</jar>
+	<copy file="${jars}/jdbcLdap.jar" todir="${lib}"/>
+	<mkdir dir="${example}"/>
+	<copy file="${src}/TestSQL.java" todir="${example}"/>
+    </target>
+
+    <target depends="init,build,jar" description="performs both a build and jar" name="build-jar"/>
+
+    <target depends="init" description="executes javadoc on the sources in src and places the docs in docs" name="doc">
+        <mkdir dir="tmp"/>
+	<copy todir="tmp">
+            <fileset dir="src"/>
+	</copy>
+        <copy todir="tmp">
+            <fileset dir="${src}"/>
+        </copy>
+	<javadoc Private="true" author="true" destdir="${docsdir}" packagenames="com.octetstring.*" sourcepath="tmp">
+	</javadoc>
+	<delete dir="tmp"/>
+    </target>
+    
+    <target depends="build-jar" name="unit-test" description="Runs all JUnitTests">
+        
+        <delete dir="testResults" />
+        <mkdir dir="testResults"/>
+        <mkdir dir="testResults/html"/>
+        <junit printsummary="yes" haltonfailure="no" fork="yes"  >
+            <sysproperty key="ldapConnString" value="${test.ldapConnString}" />
+            <test name="com.octetstring.jdbcLdap.junit.sql.TestDriver" todir="testResults"/>
+            <test name="com.octetstring.jdbcLdap.junit.sql.TestSqlToLdap" todir="testResults"/>
+            <test name="com.octetstring.jdbcLdap.junit.sql.TestSelect" todir="testResults"/>
+            <test name="com.octetstring.jdbcLdap.junit.sql.TestSelectRetrieve" todir="testResults"/>
+            <test name="com.octetstring.jdbcLdap.junit.sql.TestUnpack" todir="testResults"/>
+            <test name="com.octetstring.jdbcLdap.junit.sql.TestResultSet" todir="testResults"/>
+            <test name="com.octetstring.jdbcLdap.junit.sql.TestStatement" todir="testResults"/>
+	    <test name="com.octetstring.jdbcLdap.junit.sql.TestInsert" todir="testResults"/>
+	    <test name="com.octetstring.jdbcLdap.junit.sql.TestDelete" todir="testResults"/>
+            <test name="com.octetstring.jdbcLdap.junit.sql.TestUpdate" todir="testResults"/>
+            <classpath>
+                <pathelement path="${lib}/jdbcLdap.jar" />
+            </classpath>
+            <formatter type="xml" />
+        </junit>
+        
+        
+
+        <junitreport todir="${reports.tests}">
+            <fileset dir="${reports.tests}">
+                <include name="*.xml"/>
+            </fileset>
+            <report format="frames" todir="${reports.tests}/html"/>
+        </junitreport>
+
+
+    </target>
+    
+    
+    
+</project>
