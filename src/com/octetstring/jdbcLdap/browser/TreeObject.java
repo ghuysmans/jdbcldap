@@ -16,6 +16,7 @@ import java.net.MalformedURLException;
 import java.util.*;
 
 import com.novell.ldap.LDAPUrl;
+import com.novell.ldap.util.DN;
 import com.octetstring.jdbcLdap.jndi.*;
 import java.util.regex.*;
 
@@ -58,22 +59,33 @@ public class TreeObject {
 		
 		public TreeObject(String name, TreeObject parent,String topBase) {
 			this.getSQL = true;
-			if (parent == null) {
-				this.base = name;
-				this.name = name;
+			if (parent == null || parent.getName().equalsIgnoreCase("RootDSE"))  {
+				if (name.trim().length() == 0) {
+					this.base = name;
+					this.name = "RootDSE";
+				} else {
+					this.base = name;
+					this.name = name;
+				}
+				
 			}
 			else {
 					//System.out.println("passed in name : " + name);
-					this.name = name.substring(0,name.indexOf(','));
-					
-					if (name.endsWith(parent.getBase())) {
-						this.base = name;
-					}
-					else {
-						if (name.lastIndexOf(topBase) == -1) {
+					if (name.indexOf(',') == -1) {
+						name = "RootDSE";
+						base = " ";
+					} else {
+						this.name = new DN(name).explodeDN(false)[0];//  name.substring(0,name.indexOf(','));
+						
+						if (name.endsWith(parent.getBase()) || parent.getName().equalsIgnoreCase("RootDSE")) {
 							this.base = name;
-						} else {
-							this.base = name.substring(name.indexOf(',') + 1, name.lastIndexOf(topBase));
+						}
+						else {
+							if (name.lastIndexOf(topBase) == -1) {
+								this.base = name;
+							} else {
+								this.base = name.substring(name.indexOf(',') + 1, name.lastIndexOf(topBase));
+							}
 						}
 					}
 				

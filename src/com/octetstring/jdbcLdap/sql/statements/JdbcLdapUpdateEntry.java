@@ -202,7 +202,7 @@ public class JdbcLdapUpdateEntry
 					attribName = attr.substring(0,attr.indexOf("="));
 					attribValue = attr.substring(attr.indexOf("=") + 1);
 			
-					if (attribValue.charAt(0) == '"') {
+					if (attribValue.charAt(0) == '"' || attribValue.charAt(0) == '\'') {
 						attribValue = attribValue.substring(1,attribValue.length()-1);
 					}
 					

@@ -153,6 +153,7 @@ public class JdbcLdapInsert
 
 		tmp = SQL.substring(begin, end);
 		//tok = new StringTokenizer(tmp,",",false);
+		
 		ltoks = explodeDN(tmp);
 		vals = new String[ltoks.size()];
 		offset = new int[ltoks.size()];
@@ -162,7 +163,7 @@ public class JdbcLdapInsert
 			vals[i] = (String) it.next();
 			
 			//temporary
-			if (vals[i].charAt(0) == '"') {
+			if (vals[i].charAt(0) == '"' || vals[i].charAt(0) == '\'') {
 				vals[i] = vals[i].substring(1,vals[i].length()-1);
 			}
 			
@@ -176,7 +177,7 @@ public class JdbcLdapInsert
 				//System.out.println("j : " + j + " i : " + i + " fields[i] : " + fields[i]);
 				
 			}
-			else if (vals[i].charAt(0) == QUOTE) {
+			else if (vals[i].charAt(0) == QUOTE || vals[i].charAt(0) == '\'') {
 				vals[i] = vals[i].substring(1,vals[i].length()-2);
 				
 			}

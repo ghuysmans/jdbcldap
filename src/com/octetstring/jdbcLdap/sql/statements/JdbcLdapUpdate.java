@@ -173,7 +173,7 @@ public class JdbcLdapUpdate extends com.octetstring.jdbcLdap.sql.statements.Jdbc
             vals[i] = token.substring(token.indexOf(EQUALS) + 1);
             
 			//temporary
-			if (vals[i].charAt(0) == '"') {
+			if (vals[i].charAt(0) == '"' || vals[i].charAt(0) == '\'') {
 				vals[i] = vals[i].substring(1,vals[i].length()-1);
 			}
             

@@ -41,6 +41,7 @@ public class DirTree implements ITreeContentProvider {
 	public Object[] getChildren(Object obj) {
 		TreeObject to = (TreeObject) obj;
 		
+		ResultSet namingContexts = null;
 		
 		if (! to.getSQL) {
 			return to.children.values().toArray();
@@ -80,7 +81,16 @@ public class DirTree implements ITreeContentProvider {
 		else {
 			try {
 				con = browser.getConnection(to.getConId());
-				sql = "SELECT dn FROM oneLevelScope;" + to.getBase();
+				String base = to.getBase();
+				if (base.equalsIgnoreCase("RootDSE")) {
+					sql = "SELECT namingContexts FROM objectScope; ";
+					namingContexts = con.createStatement().executeQuery(sql);
+				} else {
+				
+					sql = "SELECT dn FROM oneLevelScope;" + to.getBase();
+					
+					
+				}
 				/*if (to.toString().equalsIgnoreCase(con.getBaseDN())) {	
 					sql = "SELECT dn FROM oneLevelScope;";
 				}
@@ -119,11 +129,21 @@ public class DirTree implements ITreeContentProvider {
 		try {
 			//System.out.println("beginning sql");
 			//System.out.println("to.getConId: " + to.getConId());
-			ResultSet rs = con.createStatement().executeQuery(sql);
+			ResultSet rs = null;
+			String dnAttrib = "DN";
+			
+			if (namingContexts == null) {
+				rs = con.createStatement().executeQuery(sql);
+			} else {
+				rs = namingContexts;
+				dnAttrib = "namingContexts";
+			}
+			
+			
 			//System.out.println("retrieving sql");
 			
 			while (rs.next()) {
-				TreeObject nto = new TreeObject(rs.getString("DN"),to,con.getBaseDN());
+				TreeObject nto = new TreeObject(rs.getString(dnAttrib),to,con.getBaseDN());
 				nto.setConId(to.getConId());
 				children.add(nto);
 			}

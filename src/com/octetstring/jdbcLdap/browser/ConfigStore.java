@@ -103,6 +103,7 @@ public class ConfigStore {
 		
 		this.configs.put(label,cs);
 		this.storeConfigs();
+		
 	}
 	
 	/**

@@ -220,7 +220,7 @@ public abstract class JdbcLdapSqlAbs implements JdbcLdapSql {
 					current = dnstr.charAt(i);
 					if (current == '\\') {
 						escaped = !escaped;
-					} else if (current == '\"' && !escaped) {
+					} else if ((current == '\"' || current == '\'') && !escaped) {
 						inquotes = !inquotes;
 					} else if (
 						(current == ',' || current == ';') && !escaped && !inquotes) {

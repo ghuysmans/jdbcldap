@@ -39,7 +39,7 @@ import java.io.*;
  */
 public class JdbcLdapBrowserApp {
 	public static final String VERSION = "2.0";
-	public static final String BUILD = "5506M";
+	public static final String BUILD = "6031M";
 	
 	
 	static JdbcLdapBrowserApp app;

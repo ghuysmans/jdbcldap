@@ -21,6 +21,9 @@ import org.eclipse.jface.viewers.*;
 
 import java.sql.*;
 
+import com.novell.ldap.LDAPDN;
+import com.novell.ldap.util.DN;
+import com.novell.ldap.util.RDN;
 import com.octetstring.jdbcLdap.jndi.*;
 import java.util.*;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -49,24 +52,25 @@ public class ResultLoader {
 		TreeObject to = (TreeObject) entrys.get(name);
 		if (to == null) {
 			String nname;
-			if (name.lastIndexOf(root.toString()) == -1) {
+			if (root.getName().equalsIgnoreCase("RootDSE")) {
+				nname = name;
+			} else if (name.lastIndexOf(root.toString()) == -1) {
 				nname = "cn=Unknown";
-			} else {
+			}  else {
 				nname = name.substring(0,name.lastIndexOf(root.toString()));
 			}
 			
-			StringTokenizer toker = new StringTokenizer(nname,",",false);
-			String[] dnparts = new String[toker.countTokens()];
-			int i=0;
-			while (toker.hasMoreTokens()) {
-				dnparts[i] = toker.nextToken();
-				i++;
-			}
+			
+			DN dn = new DN(nname);
+			Iterator it = dn.getRDNs().iterator();
+			
+			String[] dnparts = dn.explodeDN(false);
+			
 			
 			//try to find child
 			TreeObject tmp = root;
 			TreeObject parent = null;
-			for (i=dnparts.length-1;i>0;i--) {
+			for (int i=dnparts.length-1;i>0;i--) {
 				parent = tmp;
 				//System.out.println("i : " + i + ", len : " + dnparts.length);
 				///System.out.println("dn part : " + dnparts[i]);
@@ -74,9 +78,14 @@ public class ResultLoader {
 				if (tmp == null) {
 					String fname = "";
 					for (int j=i,m=dnparts.length;j<m;j++) {
-						fname += dnparts[j] + ",";
+						fname +=  LDAPDN.escapeRDN(dnparts[j]) + ",";
 					}
-					fname += root.toString();
+					
+					if (! root.getName().equalsIgnoreCase("RootDSE")) {
+						fname += root.toString();
+					} else {
+						fname = fname.substring(0,fname.length() - 1);
+					}
 					
 					tmp = new TreeObject(fname,parent,root.getBase(),false);
 					parent.addChild(dnparts[i],tmp);

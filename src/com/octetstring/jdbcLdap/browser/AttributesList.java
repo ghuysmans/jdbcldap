@@ -46,7 +46,15 @@ public class AttributesList implements IStructuredContentProvider {
 		
 			String sql;
 			
-			sql = "SELECT * FROM objectScope;" + to.getBase();
+			String base = to.getBase();
+			if (base.equalsIgnoreCase("RootDSE")) {
+				base = " ";
+			}
+			
+			sql = "SELECT * FROM objectScope;" + base;
+			
+			
+			
 			
 //			if (to.toString().equalsIgnoreCase(to.getBase())) {
 //				sql = "SELECT * FROM objectScope;";

@@ -102,7 +102,7 @@ public class ConnectionInfo {
 		name.setLayoutData(gr);
 		
 		if (System.getProperty("os.name").equals("Mac OS X")) {
-			System.out.println("here");
+			
 			name.addPaintListener(new LoadCfg(this));
 		} else {
 			name.addSelectionListener(new LoadCfg(this));
@@ -163,7 +163,7 @@ public class ConnectionInfo {
 				port.setLayoutData(gr);
 				
 		l = new Label(parent,SWT.NONE);
-										l.setText("Base ");
+										l.setText("Base (Leave blank for all)");
 										gr = new GridData();
 										gr.horizontalSpan = 1;
 										gr.horizontalAlignment = GridData.FILL;

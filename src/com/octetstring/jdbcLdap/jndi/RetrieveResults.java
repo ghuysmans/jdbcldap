@@ -65,12 +65,12 @@ public class RetrieveResults {
 			
 			LDAPSearchConstraints constraints = null;
 			
-			if (select.getJDBCConnection().getMaxSizeLimit() > 0) {
+			if (select.getJDBCConnection().getMaxSizeLimit() >= 0) {
 				constraints = con.getSearchConstraints();
 				constraints.setMaxResults(select.getJDBCConnection().getMaxSizeLimit());
 			}
 			
-			if (select.getJDBCConnection().getMaxTimeLimit() > 0) {
+			if (select.getJDBCConnection().getMaxTimeLimit() >= 0) {
 				if (constraints == null) {
 					constraints = con.getSearchConstraints();
 				}
@@ -103,12 +103,12 @@ public class RetrieveResults {
     		
     		LDAPSearchConstraints constraints = null;
 			
-			if (sql.getJDBCConnection().getMaxSizeLimit() > 0) {
+			if (sql.getJDBCConnection().getMaxSizeLimit() >= 0) {
 				constraints = con.getSearchConstraints();
 				constraints.setMaxResults(sql.getJDBCConnection().getMaxSizeLimit());
 			}
 			
-			if (sql.getJDBCConnection().getMaxTimeLimit() > 0) {
+			if (sql.getJDBCConnection().getMaxTimeLimit() >= 0) {
 				if (constraints == null) {
 					constraints = con.getSearchConstraints();
 				}
