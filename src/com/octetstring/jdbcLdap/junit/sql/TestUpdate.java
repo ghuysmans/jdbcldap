@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -21,6 +21,8 @@
 package com.octetstring.jdbcLdap.junit.sql;
 
 import junit.framework.*;
+
+import com.novell.ldap.LDAPException;
 import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSelect;
 import com.octetstring.jdbcLdap.jndi.*;
 import com.octetstring.jdbcLdap.sql.*;
@@ -45,10 +47,22 @@ public class TestUpdate extends junit.framework.TestCase {
     
     protected void tearDown() throws java.lang.Exception {
         if (doDelete) {
-            con.getContext().destroySubcontext("cn=\"Marc Boorshtein, OctetString\",ou=Product Development");
-            con.getContext().destroySubcontext("cn=Marc Boorsh,ou=Product Development");
-            con.getContext().destroySubcontext("cn=Steve Boorsh,ou=Product Development");
-            con.getContext().destroySubcontext("cn=Sherry Boorsh,ou=Product Development");
+        	try {
+				con.getConnection().delete("cn=\"Marc Boorshtein, OctetString\",ou=Product Development," + con.getBaseContext());
+			}
+			catch (LDAPException e) {
+				
+			}
+			
+			try {
+				con.getConnection().delete("cn=Marc Boorshtein\\, OctetString,ou=Product Development," + con.getBaseContext());
+			}
+			catch (LDAPException e) {
+				//if (care) throw e;
+			}
+            con.getConnection().delete("cn=Marc Boorsh,ou=Product Development,dc=idrs,dc=com");
+            con.getConnection().delete("cn=Steve Boorsh,ou=Product Development,dc=idrs,dc=com");
+            con.getConnection().delete("cn=Sherry Boorsh,ou=Product Development,dc=idrs,dc=com");
         }
         
         con.close();

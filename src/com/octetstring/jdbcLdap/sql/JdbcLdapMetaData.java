@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -30,29 +30,24 @@ import com.octetstring.jdbcLdap.jndi.*;
  */
 public class JdbcLdapMetaData implements java.sql.ResultSetMetaData {
 
-    /** Stores field name by number **/
-    HashMap fieldsByNum;
     
-    /** Stores fields by num */
-    LinkedList fieldsName;
     
     /** BaseDN used for search */
     String baseDN;
     
-    /** stores type information */
-    int[] types;
+    
+
+	private UnpackResults unpack;
     
     /** Creates new JdbcsResultSelect */
-    public JdbcLdapMetaData(LinkedList fieldsByName, HashMap fieldsByNum, String baseDN,int[] types) {
-        this.fieldsByNum = fieldsByNum;
-        this.fieldsName = fieldsByName;
-        this.types = types;
+    public JdbcLdapMetaData(UnpackResults unpack, String baseDN) {
+        this.unpack = unpack;
     }
 
     
     
     public java.lang.String getCatalogName(int param) throws java.sql.SQLException {
-        return ((String) fieldsName.get(param));
+        return ((String) unpack.getFieldNames().get(param));
     }
     
     public java.lang.String getColumnClassName(int param) throws java.sql.SQLException {
@@ -61,7 +56,7 @@ public class JdbcLdapMetaData implements java.sql.ResultSetMetaData {
     }
     
     public int getColumnCount() throws java.sql.SQLException {
-        return (fieldsName.size());
+        return (unpack.getFieldNames().size());
     }
     
     public int getColumnDisplaySize(int param) throws java.sql.SQLException {
@@ -77,12 +72,12 @@ public class JdbcLdapMetaData implements java.sql.ResultSetMetaData {
     }
     
     public int getColumnType(int param) throws java.sql.SQLException {
-        return types[param-1];
+        return ((Integer) unpack.getFieldTypes().get(param-1)).intValue();
     }
     
     
     public java.lang.String getColumnTypeName(int param) throws java.sql.SQLException {
-        int coltype = types[param-1];
+        int coltype = ((Integer) unpack.getFieldTypes().get(param-1)).intValue();
         switch (coltype) {
             case Types.VARCHAR : return "VARCHAR";
             case Types.DOUBLE : return "DOUBLE";

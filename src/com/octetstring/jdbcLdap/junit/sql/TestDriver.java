@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -64,6 +64,127 @@ public class TestDriver extends junit.framework.TestCase {
             Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver").newInstance();
             
             Connection con = DriverManager.getConnection(System.getProperty("ldapConnString") ,System.getProperty("ldapUser"),System.getProperty("ldapPass"));
+        }
+        catch (ClassNotFoundException ee) {
+         ee.printStackTrace(System.out);
+         fail("Not able to load driver");
+        }
+        
+        catch (SQLException e) {
+            e.printStackTrace(System.out);
+            fail("Driver not detected by url");
+        }
+        catch (Exception eee) {
+            eee.printStackTrace(System.out);
+            fail("error" + eee);
+        }
+        
+        
+        
+        
+        this.assertTrue(true);
+        
+    }
+    
+    public void testSetSizeLimit() {
+    	Connection con = null;
+    	try {
+            Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver").newInstance();
+            
+            String url = System.getProperty("ldapConnString");
+            if (url.indexOf("?") == -1) {
+            		url += "?SIZE_LIMIT:=1";
+            } else {
+            		url += "&SIZE_LIMIT:=1";
+            }
+            
+            System.out.println("URL : " + url);
+            
+            con = DriverManager.getConnection(url ,System.getProperty("ldapUser"),System.getProperty("ldapPass"));
+        }
+        catch (ClassNotFoundException ee) {
+         ee.printStackTrace(System.out);
+         fail("Not able to load driver");
+        }
+        
+        catch (SQLException e) {
+            e.printStackTrace(System.out);
+            fail("Driver not detected by url");
+        }
+        catch (Exception eee) {
+            eee.printStackTrace(System.out);
+            fail("error" + eee);
+        }
+        
+        
+        try {
+			ResultSet rs = con.createStatement().executeQuery("SELECT DN FROM oneLevelScope;");
+			while (rs.next()) {
+				System.out.println(rs.getString("DN"));
+			}
+		} catch (SQLException e1) {
+			this.assertTrue(true);
+			return;
+		}
+        
+		this.assertTrue(false);
+    }
+    
+    public void testSetTimeLimit() {
+    	Connection con = null;
+    	try {
+            Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver").newInstance();
+            
+            String url = System.getProperty("ldapConnString");
+            if (url.indexOf("?") == -1) {
+            		url += "?TIME_LIMIT:=1";
+            } else {
+            		url += "&TIME_LIMIT:=1";
+            }
+            
+            System.out.println("URL : " + url);
+            
+            con = DriverManager.getConnection(url ,System.getProperty("ldapUser"),System.getProperty("ldapPass"));
+        }
+        catch (ClassNotFoundException ee) {
+         ee.printStackTrace(System.out);
+         fail("Not able to load driver");
+        }
+        
+        catch (SQLException e) {
+        	System.out.println("error code : " + e.getErrorCode());
+         if (e.getErrorCode() == 85) {
+         	this.assertTrue(true);
+         	return;
+         }
+        	e.printStackTrace(System.out);
+            fail("Driver not detected by url");
+        }
+        catch (Exception eee) {
+            eee.printStackTrace(System.out);
+            fail("error" + eee);
+        }
+        
+        
+        try {
+			ResultSet rs = con.createStatement().executeQuery("SELECT DN FROM oneLevelScope;");
+			while (rs.next()) {
+				System.out.println(rs.getString("DN"));
+			}
+		} catch (SQLException e1) {
+			this.assertTrue(true);
+			return;
+		}
+        
+		this.assertTrue(false);
+    }
+    
+    
+    public void testGenerateTLSConnection() {
+        try {
+            Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver").newInstance();
+            
+            Connection con = DriverManager.getConnection(System.getProperty("ldapConnStringTLS") ,System.getProperty("ldapUser"),System.getProperty("ldapPass"));
         }
         catch (ClassNotFoundException ee) {
          ee.printStackTrace(System.out);

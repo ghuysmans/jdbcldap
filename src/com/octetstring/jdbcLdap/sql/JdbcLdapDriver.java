@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -41,7 +41,7 @@ public class JdbcLdapDriver implements java.sql.Driver {
     public static final int MAJOR_VERSION = 0;
     
     /**Minor Version of driver */
-    public static final int MINOR_VERSION = 1;
+    public static final int MINOR_VERSION = 99;
     
     /**Is JDBC Type IV Driver? */
     public static final boolean JDBC_IV = false;

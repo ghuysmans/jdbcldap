@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -296,7 +296,7 @@ public class TestStatement extends junit.framework.TestCase {
             vals = row.values().toArray();
             for (i=1;i<=rsmd.getColumnCount() ;i++) {
                 
-                if (! vals[i-1].equals(rs.getString(rsmd.getColumnName(i)))) {
+                if (! row.get(rsmd.getColumnName(i)).equals(rs.getString(rsmd.getColumnName(i)))) {
                     return false;
                 }
             }

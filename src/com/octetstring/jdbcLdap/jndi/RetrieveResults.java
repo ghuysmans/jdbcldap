@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -20,11 +20,12 @@
 
 package com.octetstring.jdbcLdap.jndi;
 
-import javax.naming.*;
-import javax.naming.directory.*;
+
 import com.octetstring.jdbcLdap.sql.statements.*;
 import java.sql.*;
 import java.util.*;
+
+import com.novell.ldap.*;
 /**
  *Retrieves the results from a qeury
  *@author Marc Boorshtein, OctetString
@@ -35,83 +36,96 @@ public class RetrieveResults {
     public RetrieveResults() {
     }
     
-    public NamingEnumeration search(JdbcLdapSelect select) throws SQLException {
-        try {
-            DirContext con = select.getContext();
-            SearchControls ctls = new SearchControls();
-            int num;
-            
-           //System.out.println("select.getSearchAttributes().length : " + select.getSearchAttributes().length);
-            
-            String[] fields = select.getSearchAttributes();
-            fields = fields != null ? fields : new String[0];
-            
-            
+    public Object searchJldap(JdbcLdapSelect select) throws SQLException {
+    	try {
+			LDAPConnection con = select.getConnection();
+			String[] fields = select.getSearchAttributes();
+			fields = fields != null ? fields : new String[0];
+			
+			
 			String[] searchAttribs;
 			
-            if (fields.length == 1 && fields[0].equalsIgnoreCase("dn")) {
-            	searchAttribs = new String[] {"1.1"};	
-            	
-            }
-            else {
-				ArrayList ar = new ArrayList();
-
-
-				for (int i=0, m=fields.length;i<m;i++) {
-					if (! fields[i].equalsIgnoreCase("dn")) {
-						ar.add(fields[i]);
-					}
+			if (fields.length == 1 && fields[0].equalsIgnoreCase("dn")) {
+				searchAttribs = new String[] {"1.1"};	
+				
+			}
+			else {
+				searchAttribs = fields;
+			}
+			
+			/*System.out.println("attribs");
+			for (int i=0,m=searchAttribs.length;i<m;i++) {
+				System.out.println("attrib : " + searchAttribs[i]);
+			}*/
+			
+			String useBase = JndiLdapConnection.getRealBase(select);
+			//System.out.println("useBase : " + useBase);
+			String filter = select.getFilterWithParams();
+			//System.out.println("filter : " + filter);
+			
+			LDAPSearchConstraints constraints = null;
+			
+			if (select.getJDBCConnection().getMaxSizeLimit() > 0) {
+				constraints = con.getSearchConstraints();
+				constraints.setMaxResults(select.getJDBCConnection().getMaxSizeLimit());
+			}
+			
+			if (select.getJDBCConnection().getMaxTimeLimit() > 0) {
+				if (constraints == null) {
+					constraints = con.getSearchConstraints();
 				}
-
-				searchAttribs = new String[ar.size()];
-
-				System.arraycopy(ar.toArray(),0,searchAttribs,0,ar.size());	
-            }
-            
-            
-            
-             
-            
-            
-            ctls.setReturningAttributes(searchAttribs.length != 0 ? searchAttribs : null);
-            ctls.setSearchScope(select.getSearchScope());
-            
-            num = select.getMaxRecords();
-            if (num != -1) ctls.setCountLimit(num);
-            
-            num = select.getTimeOut();
-            if (num != -1) ctls.setTimeLimit(num);
-            
-            String filter = select.getFilterWithParams();
-            
-            return con.search(select.getBaseContext(), filter ,ctls);
-        }
-        catch (NamingException e) {
-            throw new SQLNamingException(e);
-        }
+				
+				constraints.setTimeLimit(select.getJDBCConnection().getMaxTimeLimit());
+			}
+			
+			if (select.getJDBCConnection().isDSML()) {
+				return con.search(useBase,select.getSearchScope(),filter,searchAttribs,false,constraints);
+			} else {
+				return con.search(useBase,select.getSearchScope(),filter,searchAttribs,false,null,constraints);
+			}
+		} catch (LDAPException e) {
+			throw new SQLNamingException(e);
+		}
+    	
     }
     
-    public NamingEnumeration searchUpIns(JdbcLdapSqlAbs sql) throws SQLException {
-        try {
-            DirContext con = sql.getContext();
-            SearchControls ctls = new SearchControls();
-            int num;
-            //System.out.println("Search Scope : " + sql.getSearchScope());
-            ctls.setSearchScope(sql.getSearchScope());
-            
-            num = sql.getTimeOut();
-            if (num != -1) ctls.setTimeLimit(num);
-            
-            String filter = sql.getFilterWithParams();
-            
+    
+    
+    
+    public LDAPSearchResults searchUpInsJldap(JdbcLdapSqlAbs sql) throws SQLException {
+    	try {
+    		LDAPConnection con = sql.getConnection();
+    		
+    		
+    		String useBase = JndiLdapConnection.getRealBase(sql);
+    		
+    		String filter = sql.getFilterWithParams();
+    		
+    		LDAPSearchConstraints constraints = null;
+			
+			if (sql.getJDBCConnection().getMaxSizeLimit() > 0) {
+				constraints = con.getSearchConstraints();
+				constraints.setMaxResults(sql.getJDBCConnection().getMaxSizeLimit());
+			}
+			
+			if (sql.getJDBCConnection().getMaxTimeLimit() > 0) {
+				if (constraints == null) {
+					constraints = con.getSearchConstraints();
+				}
+				
+				constraints.setTimeLimit(sql.getJDBCConnection().getMaxTimeLimit());
+			}
+    		
 //	    	System.out.println("sql.getBaseContext() " + sql.getBaseContext());
 //	    	System.out.println("where : " + filter);
 //	    	System.out.println("scope  : " + sql.getSearchScope());
-            return con.search(sql.getBaseContext(), filter ,ctls);
-        }
-        catch (NamingException e) {
-            throw new SQLNamingException(e);
-        }
+    		return con.search(useBase,sql.getSearchScope(),filter,new String[] {"1.1"},false,constraints);
+    	}
+    	catch (LDAPException e) {
+    		throw new SQLNamingException(e);
+    	}
     }
+
+    
     
 }

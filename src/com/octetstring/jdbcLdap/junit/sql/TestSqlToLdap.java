@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -20,6 +20,7 @@
 
 package com.octetstring.jdbcLdap.junit.sql;
 
+import java.sql.SQLException;
 import java.util.*;
 import junit.framework.*;
 import com.octetstring.jdbcLdap.sql.SqlToLdap;
@@ -252,7 +253,7 @@ public class TestSqlToLdap extends junit.framework.TestCase {
     /**
      *Tests a conversion of NOT ou=Peons AND (ou=Accounting OR (ou=Payroll AND NOT ou=Planning)) into (&(!(ou=Peons))(|(ou=Accounting)(&(ou=Payroll)(!(ou=Planning)))))
      */
-    public void testSQLtoLDAP() {
+    public void testSQLtoLDAP() throws SQLException{
         String sql = "NOT ou=Peons AND (ou=Accounting OR (ou=Payroll AND NOT ou=Planning))";
         String ldapExp = "(&(!(ou=Peons))(|(ou=Accounting)(&(ou=Payroll)(!(ou=Planning)))))";
         SqlToLdap trans = new SqlToLdap();

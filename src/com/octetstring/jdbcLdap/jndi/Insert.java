@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -23,6 +23,11 @@ package com.octetstring.jdbcLdap.jndi;
 import javax.naming.*;
 import java.util.*;
 import javax.naming.directory.*;
+
+import com.novell.ldap.*;
+import com.novell.ldap.LDAPAttributeSet;
+import com.novell.ldap.LDAPConnection;
+import com.novell.ldap.LDAPEntry;
 import com.octetstring.jdbcLdap.sql.statements.JdbcLdapInsert;
 import com.octetstring.jdbcLdap.sql.*;
 import java.sql.*;
@@ -65,6 +70,50 @@ public class Insert {
 			con.createSubcontext(insert.getDistinguishedName(),atts);
 		}
 		catch (NamingException ne) {
+			throw new SQLNamingException(ne); 
+		}
+	}
+	
+	public void doInsertJldap(JdbcLdapInsert insert) throws SQLException {
+		LDAPConnection con = insert.getConnection();
+		Attributes atts = new BasicAttributes();
+		SqlStore store = insert.getSqlStore();
+		String[] fields = store.getFields();
+		String[] vals = insert.getVals();
+		LinkedList fieldsMap = store.getFieldsMap();
+		Iterator it;
+		String field;
+		Pair p;
+		
+		
+		
+		LDAPEntry entry;
+		LDAPAttributeSet attribs = new LDAPAttributeSet();
+		
+		LDAPAttribute attrib;
+		//take all attributes and add it to addition list
+		try {
+			it = fieldsMap.iterator();
+			while (it.hasNext()) {
+				
+				p = (Pair) it.next();
+				
+				field = p.getName();
+				attrib = attribs.getAttribute(field);
+				
+				if (attrib == null) {
+					attrib = new LDAPAttribute(field);
+					attribs.add(attrib);
+				}
+				
+				
+				attrib.addValue(p.getValue());
+			}
+			
+			//System.err.println("creating :" + JndiLdapConnection.getRealBase(insert));
+			con.add(new LDAPEntry(JndiLdapConnection.getRealBase(insert),attribs));
+		}
+		catch (LDAPException ne) {
 			throw new SQLNamingException(ne); 
 		}
 	}

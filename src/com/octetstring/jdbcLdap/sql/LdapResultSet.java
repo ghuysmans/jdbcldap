@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -23,6 +23,7 @@ package com.octetstring.jdbcLdap.sql;
 import java.sql.*;
 import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSelect;
 import com.octetstring.jdbcLdap.jndi.*;
+
 import java.io.*;
 import java.util.*;
 import java.net.*;
@@ -35,10 +36,9 @@ import java.math.BigDecimal;
 public class LdapResultSet implements java.sql.ResultSet {
 
 	/** List of field names and number of values **/
-	LinkedList fields;
+	ArrayList fields;
 
-	/** List of fields by number */
-	HashMap fieldsByNum;
+	
 
 	/**Connection to ldap server */
 	JndiLdapConnection con;
@@ -46,8 +46,7 @@ public class LdapResultSet implements java.sql.ResultSet {
 	/** Current Row */
 	HashMap row;
 
-	/** Table Data */
-	LinkedList table;
+
 
 	/** Row pointer */
 	int pos;
@@ -63,14 +62,17 @@ public class LdapResultSet implements java.sql.ResultSet {
 
 	/** Determines if the last value was null */
 	boolean wasNull;
+	
+	UnpackResults unpack;
 
 	/** 
 	 * Sets <code>row</code> to the current row
 	 *@return true if <cod>row</code> is not null
+	 * @throws SQLNamingException
 	 */
-	boolean moveToPos() {
-		if (pos >= 0 && pos < table.size()) {
-			this.row = (HashMap) table.get(this.pos);
+	boolean moveToPos() throws SQLNamingException {
+		if (pos >= 0 && unpack.moveNext(pos)) {
+			this.row = (HashMap) unpack.getRows().get(this.pos);
 			return (row != null);
 		} else {
 			row = null;
@@ -82,24 +84,17 @@ public class LdapResultSet implements java.sql.ResultSet {
 	public LdapResultSet(
 		JndiLdapConnection con,
 		JdbcLdapStatement statement,
-		LinkedList rows,
-		LinkedList fieldNames,
-		String baseDN,
-		int[] types) {
+		UnpackResults unpack,
+		String baseDN) {
+		
+		this.unpack = unpack;
 		this.con = con;
-		this.table = rows;
+		
 		this.baseDN = baseDN;
-		this.fields = fieldNames;
 		this.statement = statement;
-		fieldsByNum = new HashMap();
-		this.types = types;
-		int i = 0;
-
-		Iterator it = fields.iterator();
-		while (it.hasNext()) {
-			fieldsByNum.put(new Integer(i), it.next());
-			i++;
-		}
+		
+		
+		
 
 		pos = -1;
 	}
@@ -121,7 +116,7 @@ public class LdapResultSet implements java.sql.ResultSet {
 		if (row == null)
 			throw new SQLException("Invalid row position");
 
-		String field = (String) fieldsByNum.get(new Integer(id - 1));
+		String field = (String) this.unpack.getFieldNames().get(id - 1);
 
 		if (field == null)
 			throw new SQLException(
@@ -143,7 +138,7 @@ public class LdapResultSet implements java.sql.ResultSet {
 	}
 
 	public void afterLast() throws java.sql.SQLException {
-		pos = table.size();
+		pos = this.unpack.getRows().size();
 		moveToPos();
 	}
 
@@ -168,7 +163,7 @@ public class LdapResultSet implements java.sql.ResultSet {
 	}
 
 	public int findColumn(java.lang.String str) throws java.sql.SQLException {
-		return ((Integer) fieldsByNum.get(str)).intValue();
+		return this.unpack.getFieldNames().indexOf(str);
 	}
 
 	public boolean first() throws java.sql.SQLException {
@@ -324,7 +319,7 @@ public class LdapResultSet implements java.sql.ResultSet {
 	}
 
 	public int getFetchSize() throws java.sql.SQLException {
-		return table.size();
+		return 1;
 	}
 
 	public float getFloat(int param) throws java.sql.SQLException {
@@ -354,10 +349,8 @@ public class LdapResultSet implements java.sql.ResultSet {
 	public java.sql.ResultSetMetaData getMetaData()
 		throws java.sql.SQLException {
 		return new JdbcLdapMetaData(
-			this.fields,
-			this.fieldsByNum,
-			this.baseDN,
-			this.types);
+			this.unpack,
+			this.baseDN);
 	}
 
 	public java.lang.Object getObject(int param) throws java.sql.SQLException {
@@ -499,7 +492,7 @@ public class LdapResultSet implements java.sql.ResultSet {
 	}
 
 	public boolean isAfterLast() throws java.sql.SQLException {
-		return pos > this.table.size() - 1;
+		return pos > this.unpack.getRows().size() - 1;
 	}
 
 	public boolean isBeforeFirst() throws java.sql.SQLException {
@@ -511,11 +504,11 @@ public class LdapResultSet implements java.sql.ResultSet {
 	}
 
 	public boolean isLast() throws java.sql.SQLException {
-		return pos == table.size() - 1;
+		return pos == this.unpack.getRows().size() - 1;
 	}
 
 	public boolean last() throws java.sql.SQLException {
-		pos = table.size() - 1;
+		pos = this.unpack.getRows().size() - 1;
 		return true;
 	}
 

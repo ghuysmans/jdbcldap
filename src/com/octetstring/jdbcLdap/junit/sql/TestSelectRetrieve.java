@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -28,6 +28,7 @@ import javax.naming.directory.*;
 import javax.naming.*;
 import java.io.*;
 import java.util.*;
+import com.novell.ldap.*;
 /**
  *Tests using a JdbcLdapSelect instance to retrieve results from a LDAP server
  *@author Marc Boorshtein, OctetString
@@ -60,22 +61,22 @@ public class TestSelectRetrieve extends junit.framework.TestCase {
         JdbcLdapSelect sel = new JdbcLdapSelect();
         sel.init(con,sql);
         
-        NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
-        
-        DirContext dir = con.getContext();
-        SearchControls ctls = new SearchControls();
+        LDAPMessageQueue res = (LDAPMessageQueue) sel.executeQuery();        
+        LDAPConnection ldap = con.getConnection();
+        //SearchControls ctls = new SearchControls();
         
         String[] atts = {"cn","sn","ou"};
         String filter = "(|(ou=Payroll)(ou=Peons))";
-        String base = "";
+        String base = con.getBaseContext();
         
-        ctls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        ctls.setReturningAttributes(atts);
+        LDAPMessageQueue ctrl = ldap.search(base,LDAPConnection.SCOPE_SUB,filter,atts,false,null,null);
         
-        NamingEnumeration enumCtl = dir.search(base,filter,ctls);
         
-        LinkedList l1 = load(enum);
-        LinkedList l2 = load(enumCtl);
+        
+        
+        
+        LinkedList l2 = load(ctrl);
+        LinkedList l1 = load(res);
         
         
         
@@ -95,22 +96,19 @@ public class TestSelectRetrieve extends junit.framework.TestCase {
         sel.getArgs()[0] = "Payroll";
         sel.getArgs()[1] = "Peons";
         
-        NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
-        
-        DirContext dir = con.getContext();
-        SearchControls ctls = new SearchControls();
+        LDAPMessageQueue res = (LDAPMessageQueue) sel.executeQuery();        
+        LDAPConnection ldap = con.getConnection();
         
         String[] atts = {"cn","sn","ou"};
         String filter = "(|(ou=Payroll)(ou=Peons))";
-        String base = "";
         
-        ctls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        ctls.setReturningAttributes(atts);
         
-        NamingEnumeration enumCtl = dir.search(base,filter,ctls);
+        String base = con.getBaseContext();
         
-        LinkedList l1 = load(enum);
-        LinkedList l2 = load(enumCtl);
+        LDAPMessageQueue ctrl = ldap.search(base,LDAPConnection.SCOPE_SUB,filter,atts,false,null,null);
+        
+        LinkedList l2 = load(ctrl);
+        LinkedList l1 = load(res);
         
         
         
@@ -128,22 +126,89 @@ public class TestSelectRetrieve extends junit.framework.TestCase {
         JdbcLdapSelect sel = new JdbcLdapSelect();
         sel.init(con,sql);
         
-        try {
-            NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
-        }
-        catch (SQLException e) {
-            StringWriter out = new StringWriter();
-            e.printStackTrace(new PrintWriter(out, true));
-            fail(out.toString());
-        }
+        LDAPMessageQueue res = (LDAPMessageQueue) sel.executeQuery();        
+        LDAPConnection ldap = con.getConnection();
         
-        DirContext dir = con.getContext();
-        SearchControls ctls = new SearchControls();
         
+        String[] atts = {"cn","sn","ou"};
+        String filter = "(objectClass=*)";
+        
+        
+        String base = "ou=Peons," + con.getBaseContext();
+        
+        LDAPMessageQueue ctrl = ldap.search(base,LDAPConnection.SCOPE_SUB,filter,atts,false,null,null);
+        
+        LinkedList l2 = load(ctrl);
+        LinkedList l1 = load(res);
+        
+        
+        //System.out.println(l1);
+        //System.out.println();
+        //System.out.println(l2);
+        if (l1.size() != l2.size()) fail("Same results not gotten");
+        
+        assertTrue("Results don't match",this.compareLists(l1,l2));
         
         
         assertTrue(true);
         
+    }
+    
+    
+    LinkedList load(LDAPMessageQueue res) throws Exception {
+    	LinkedList list = new LinkedList();
+    	LinkedList row;
+    	LDAPEntry entry;
+    	Attributes atts;
+    	NamingEnumeration enum2;
+    	Enumeration vals;
+    	Attribute att;
+    	String attrid;
+    	String val;
+    	Object obj;
+    	String svals[],svals1[];
+    	entry = null;
+    	boolean hasMore = true;
+    	while (hasMore) {
+    		row = new LinkedList();
+    		LDAPMessage message = res.getResponse();
+    		if (message instanceof LDAPSearchResult) {
+    			entry = ((LDAPSearchResult) message).getEntry();
+    		} else {
+    			LDAPResponse resp = (LDAPResponse) message;
+    			if (resp.getResultCode() == LDAPException.SUCCESS) {
+    				hasMore = false;
+    				break;
+    			} else {
+    				throw new LDAPException(resp.getErrorMessage(),resp.getResultCode(),resp.getErrorMessage(),resp.getMatchedDN());
+    			}
+    			
+    		}
+    		
+    		//System.out.println(res.getName());
+    		LDAPAttributeSet attribs = entry.getAttributeSet();
+    		Iterator it = attribs.iterator();
+    		while (it.hasNext()) {
+    			LDAPAttribute attrib = (LDAPAttribute) it.next();
+    			
+    			attrid = attrib.getName();
+    			//System.out.println(attrid);
+    			val = "";
+    			svals = attrib.getStringValueArray();
+    			for (int i=0,m=svals.length;i<m;i++) {
+    				obj = svals[i];
+    				
+    				val +=  obj.toString();
+    			}
+    			//System.out.println(val);
+    			row.add(attrid + val);
+    		}
+    		
+    		list.add(row);
+    		
+    	}
+    	
+    	return list;
     }
     
     /**

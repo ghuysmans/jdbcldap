@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -85,7 +85,7 @@ public class JdbcLdapUpdate extends com.octetstring.jdbcLdap.sql.statements.Jdbc
     }
     
     public Object executeUpdate() throws SQLException {
-        return new Integer(update.doUpdate(this));
+        return new Integer(update.doUpdateJldap(this));
     }
     
     

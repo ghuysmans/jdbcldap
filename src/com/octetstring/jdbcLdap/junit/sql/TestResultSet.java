@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -21,6 +21,9 @@
 package com.octetstring.jdbcLdap.junit.sql;
 
 import junit.framework.*;
+
+import com.novell.ldap.LDAPMessageQueue;
+import com.novell.ldap.LDAPSearchResults;
 import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSelect;
 import com.octetstring.jdbcLdap.jndi.*;
 import com.octetstring.jdbcLdap.sql.*;
@@ -62,12 +65,12 @@ public class TestResultSet extends junit.framework.TestCase {
         String field;
         
         
-        NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
+        LDAPMessageQueue enum = (LDAPMessageQueue) sel.executeQuery();
         
         UnpackResults pack = new UnpackResults(con);
-        pack.unpack(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
+        pack.unpackJldap(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
         
-        LdapResultSet rs = new LdapResultSet(con,null,pack.getRows(),pack.getFieldNames(),sel.getBaseContext(),pack.getFieldTypes());
+        LdapResultSet rs = new LdapResultSet(con,null,pack,sel.getBaseContext());
         
         
         LinkedList fieldsExp = new LinkedList();
@@ -132,12 +135,12 @@ public class TestResultSet extends junit.framework.TestCase {
         String field;
         StringBuffer buf = new StringBuffer();
         
-        NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
+        LDAPMessageQueue enum = (LDAPMessageQueue) sel.executeQuery();
         
         UnpackResults pack = new UnpackResults(con);
-        pack.unpack(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
+        pack.unpackJldap(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
         
-        LdapResultSet rs = new LdapResultSet(con,null,pack.getRows(),pack.getFieldNames(),sel.getBaseContext(),pack.getFieldTypes());
+        LdapResultSet rs = new LdapResultSet(con,null,pack,sel.getBaseContext());
         
         LinkedList fieldsExp = new LinkedList();
         
@@ -316,8 +319,9 @@ public class TestResultSet extends junit.framework.TestCase {
             vals = row.values().toArray();
             for (i=1;i<=rsmd.getColumnCount() ;i++) {
                 
-                if (! vals[i-1].equals(rs.getString(rsmd.getColumnName(i)))) {
-                    return false;
+                if (! row.get(rsmd.getColumnName(i)).equals(rs.getString(rsmd.getColumnName(i)))) {
+                    System.out.println("TEST FAILED : " + vals[i-1] + "; " + rsmd.getColumnName(i) + "; " + rs.getString(rsmd.getColumnName(i)));
+                	return false;
                 }
             }
             

@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -22,6 +22,9 @@ package com.octetstring.jdbcLdap.sql;
 
 import java.sql.*;
 import java.util.*;
+
+import com.novell.ldap.LDAPMessageQueue;
+import com.novell.ldap.LDAPSearchResults;
 import com.octetstring.jdbcLdap.jndi.*;
 import com.octetstring.jdbcLdap.sql.statements.*;
 import com.octetstring.jdbcLdap.sql.*;
@@ -194,20 +197,28 @@ public class JdbcLdapStatement implements java.sql.Statement {
 	public java.sql.ResultSet executeQuery(java.lang.String str)
 		throws java.sql.SQLException {
 		this.loadSQL(str);
-		res.unpack(
-			(NamingEnumeration) stmt.executeQuery(),
-			stmt.getRetrieveDN(),
-			stmt.getSqlStore().getFrom(),
-			con.getBaseDN());
+		if (this.con.isDSML()) {
+			res.unpackJldap(
+					(LDAPSearchResults) stmt.executeQuery(),
+					stmt.getRetrieveDN(),
+					stmt.getSqlStore().getFrom(),
+					con.getBaseDN());
+		} else {
+			res.unpackJldap(
+				(LDAPMessageQueue) stmt.executeQuery(),
+				stmt.getRetrieveDN(),
+				stmt.getSqlStore().getFrom(),
+				con.getBaseDN());
+		}
 
+
+		
 		this.rs =
 			new LdapResultSet(
 				con,
 				this,
-				res.getRows(),
-				res.getFieldNames(),
-				((JdbcLdapSelect) stmt).getBaseContext(),
-				res.getFieldTypes());
+				res,
+				((JdbcLdapSelect) stmt).getBaseContext());
 		return rs;
 
 	}

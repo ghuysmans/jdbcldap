@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -20,29 +20,32 @@
 
 package com.octetstring.jdbcLdap.jndi;
 
-import javax.naming.*;
-import javax.naming.directory.*;
+
 import com.octetstring.jdbcLdap.sql.statements.*;
 import com.octetstring.jdbcLdap.sql.*;
 import java.sql.*;
+import com.novell.ldap.*;
 /**
  *Deletes an entry
  *@author Marc Boorshtein, OctetString
  */
 public class Delete {
 	RetrieveResults res = new RetrieveResults();
-	SearchResult seres;
-	public int doDelete(JdbcLdapDelete del) throws SQLException {
-		DirContext con = del.getCon().getContext();
+
+
+	
+	public int doDeleteJldap(JdbcLdapDelete del) throws SQLException {
+		LDAPConnection con = del.getConnection();
+		
 		StringBuffer buf = new StringBuffer();
 		SqlStore store = del.getSqlStore();
 		int count = 0;
 		//System.out.println("from : " + store.getFrom());
 		if (store.getSimple()) {
 			try {
-				con.destroySubcontext(store.getFrom());
+				con.delete(JndiLdapConnection.getRealBase(del));
 			}
-			catch (NamingException ne) {
+			catch (LDAPException ne) {
 				throw new SQLNamingException(ne);
 			}
 			
@@ -51,19 +54,18 @@ public class Delete {
 		else {
 			try {
 				
-				NamingEnumeration enum = res.searchUpIns(del);
+				LDAPSearchResults enum = res.searchUpInsJldap(del);
 				while (enum.hasMore()) {
-					seres = (SearchResult) enum.next();
-					buf.setLength(0);
-					con.destroySubcontext(buf.append(seres.getName()).append(',').append(store.getFrom()).toString());
+					LDAPEntry entry = enum.next(); 
+					con.delete(entry.getDN());
 					count++;
 				}
-			
-				enum.close();
-			
+				
+				
+				
 				return count;
 			}
-			catch (NamingException ne) {
+			catch (LDAPException ne) {
 				throw new SQLNamingException(ne);
 			}
 		}

@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -20,6 +20,7 @@
 
 package com.octetstring.jdbcLdap.sql.statements;
 
+import com.novell.ldap.LDAPDN;
 import com.octetstring.jdbcLdap.jndi.*;
 import com.octetstring.jdbcLdap.sql.*;
 import java.sql.*;
@@ -71,8 +72,7 @@ public class JdbcLdapInsert
 	/** Contains list of fields */
 	LinkedList fieldsMap;
 
-	/** Connection to LDAP server */
-	JndiLdapConnection con;
+	
 
 	/** SQL Statement being used */
 	String sql;
@@ -96,6 +96,8 @@ public class JdbcLdapInsert
 
 	/** Creates new JdbcLdapSql using a connection and a SQL Statement*/
 	public void init(JndiLdapConnection con, String SQL) throws SQLException {
+		this.con = con;
+		
 		LinkedList tmpvals;
 		String tmp;
 		String tmpSQL = SQL.toLowerCase();
@@ -114,14 +116,19 @@ public class JdbcLdapInsert
 
 		tmp = SQL.substring(begin, end);
 		this.dn = tmp.trim();
+		//System.out.println("dn : " + this.dn);
 		ltoks = explodeDN(this.dn);
+		//dnFields = LDAPDN.explodeDN(this.dn,false);
 		//tok = new StringTokenizer(this.dn,COMMA);
-		this.dnFields = new String[ltoks.size()];
+		//System.out.println("dnFields length : " +dnFields.length);
+		dnFields = new String[ltoks.size()];
 		it = ltoks.iterator();
-		for (i = 0; it.hasNext(); i++) {
+		i=0;
+		while (it.hasNext()) {
 			dnFields[i] = (String) it.next();
-			
+			//if (dnFields[i].indexOf('=') != -1) dnFields[i] = LDAPDN.normalize(dnFields[i]);
 			//System.out.println(dnFields[i]);
+			i++;
 		}
 
 		fieldsMap = new LinkedList();
@@ -215,7 +222,7 @@ public class JdbcLdapInsert
 	}
 
 	public Object executeUpdate() throws SQLException {
-		insert.doInsert(this);
+		insert.doInsertJldap(this);
 		return new Integer(1);
 	}
 
@@ -286,6 +293,7 @@ public class JdbcLdapInsert
 		
 		for (int i = 0; i < this.dnFields.length; i++) {
 			if (dnFields[i].indexOf('=') != -1) {
+				//System.out.println("in getDistinguishedName : " +dnFields[i]);
 				fdn.append(dnFields[i]).append(COMMA);
 			} else {
 				val = "";
@@ -305,15 +313,16 @@ public class JdbcLdapInsert
 				}
 				
 				
-				
-				fdn.append(dnFields[i]).append('=').append(
-					con.ldapClean(val)).append(
+				String tmpv = LDAPDN.escapeRDN(dnFields[i] + "=" + val);
+				//System.out.println("cleaned : " + tmpv);
+				fdn.append(tmpv).append(
 					COMMA);
 				//TODO This HAS to be fixed
 				
 			}
 		}
 		String finalDN = fdn.toString();
+		
 		return finalDN.toString().substring(0, finalDN.length() - 1);
 	}
 

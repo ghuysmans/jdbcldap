@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -20,6 +20,9 @@
 
 package com.octetstring.jdbcLdap.junit.sql;
 import junit.framework.*;
+
+import com.novell.ldap.LDAPMessageQueue;
+import com.novell.ldap.LDAPSearchResults;
 import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSelect;
 import com.octetstring.jdbcLdap.jndi.*;
 import com.octetstring.jdbcLdap.sql.*;
@@ -64,12 +67,12 @@ public class TestUnpack extends junit.framework.TestCase {
         
         
         
-        NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
+        LDAPMessageQueue enum = (LDAPMessageQueue) sel.executeQuery();
         
         UnpackResults pack = new UnpackResults(con);
-        pack.unpack(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
+        pack.unpackJldap(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
         
-        LinkedList fieldsExp = new LinkedList();
+        ArrayList fieldsExp = new ArrayList();
         
         fieldsExp.add("sn");
         fieldsExp.add("ou");
@@ -84,7 +87,7 @@ public class TestUnpack extends junit.framework.TestCase {
         fieldsExp.put("seeAlso",field);
         */
         
-        LinkedList fields = pack.getFieldNames();
+        ArrayList fields = pack.getFieldNames();
         
         Iterator it = fields.iterator();
         
@@ -126,7 +129,7 @@ public class TestUnpack extends junit.framework.TestCase {
 		cmpLdif += "seeAlso: cn=Amir";
 		
 		
-        LinkedList rowsExp = new LinkedList();
+        ArrayList rowsExp = new ArrayList();
         HashMap row ;
 		row = new HashMap();
 		row.put("sn","Dept");
@@ -162,7 +165,7 @@ public class TestUnpack extends junit.framework.TestCase {
         
         
         
-        LinkedList rows = pack.getRows();
+        ArrayList rows = pack.getRows();
         
 		
 		
@@ -183,13 +186,15 @@ public class TestUnpack extends junit.framework.TestCase {
 				String field;
         
         
-				NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
+				LDAPMessageQueue enum = (LDAPMessageQueue) sel.executeQuery();
         
+				System.out.println(enum);
+				
 				UnpackResults pack = new UnpackResults(con);
-				pack.unpack(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
+				pack.unpackJldap(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
         
         
-				LinkedList fieldsExp = new LinkedList();
+				ArrayList fieldsExp = new ArrayList();
         
 				fieldsExp.add("objectClass");
 				fieldsExp.add("sn");
@@ -209,7 +214,7 @@ public class TestUnpack extends junit.framework.TestCase {
 				fieldsExp.put("seeAlso",field);
 				*/
         
-				LinkedList fields = pack.getFieldNames();
+				ArrayList fields = pack.getFieldNames();
         
 				Iterator it = fields.iterator();
         
@@ -222,7 +227,7 @@ public class TestUnpack extends junit.framework.TestCase {
         
 		
         
-				LinkedList rowsExp = new LinkedList();
+				ArrayList rowsExp = new ArrayList();
 				HashMap row = new HashMap();
 				row.put("objectClass","top");
 				row.put("sn","Zimmermann");
@@ -242,7 +247,7 @@ public class TestUnpack extends junit.framework.TestCase {
 						row.put("seeAlso","cn=Aggy");
 						rowsExp.add(row);
 						
-		LinkedList rows = pack.getRows();
+		ArrayList rows = pack.getRows();
         
 				assertTrue("Tables Don't Match\n\n" + this.formTable(rowsExp) + "\n\n" + this.formTable(rows),compareTables(fieldsExp,rowsExp,rows));
     }
@@ -258,13 +263,13 @@ public class TestUnpack extends junit.framework.TestCase {
         String field;
         
         
-        NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
+        LDAPMessageQueue enum = (LDAPMessageQueue) sel.executeQuery();
         
         UnpackResults pack = new UnpackResults(con);
-        pack.unpack(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
+        pack.unpackJldap(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
         
         
-        LinkedList fieldsExp = new LinkedList();
+        ArrayList fieldsExp = new ArrayList();
         
         fieldsExp.add("objectClass");
         fieldsExp.add("sn");
@@ -284,7 +289,7 @@ public class TestUnpack extends junit.framework.TestCase {
         fieldsExp.put("seeAlso",field);
         */
         
-        LinkedList fields = pack.getFieldNames();
+        ArrayList fields = pack.getFieldNames();
         
         Iterator it = fields.iterator();
         
@@ -295,7 +300,7 @@ public class TestUnpack extends junit.framework.TestCase {
             }
         }
         
-        LinkedList rowsExp = new LinkedList();
+        ArrayList rowsExp = new ArrayList();
         HashMap row;
         
         row = new HashMap();
@@ -333,7 +338,7 @@ public class TestUnpack extends junit.framework.TestCase {
         row.put("seeAlso","cn=Audi");
         rowsExp.add(row);
         
-        LinkedList rows = pack.getRows();
+        ArrayList rows = pack.getRows();
         
         assertTrue("Tables Don't Match\n\n" + this.formTable(rowsExp) + "\n\n" + this.formTable(rows),compareTables(fieldsExp,rowsExp,rows));
         
@@ -351,12 +356,12 @@ public class TestUnpack extends junit.framework.TestCase {
         String field;
         
         
-        NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
+        LDAPMessageQueue enum = (LDAPMessageQueue) sel.executeQuery();
         
         UnpackResults pack = new UnpackResults(con);
-        pack.unpack(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
+        pack.unpackJldap(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
         
-        LinkedList fieldsExp = new LinkedList();
+        ArrayList fieldsExp = new ArrayList();
         
         
         fieldsExp.add("objectClass_0");
@@ -385,18 +390,18 @@ public class TestUnpack extends junit.framework.TestCase {
         fieldsExp.put("seeAlso",field);
         */
         
-        LinkedList fields = pack.getFieldNames();
+        ArrayList fields = pack.getFieldNames();
         
         Iterator it = fields.iterator();
         
         while (it.hasNext()) {
             field = (String) it.next();
             if (! fieldsExp.contains(field)) {
-                fail("Incorrect fields returned : " + field);
+                fail("Incorrect fields returned : " + field + "; " + fields);
             }
         }
         
-        LinkedList rowsExp = new LinkedList();
+        ArrayList rowsExp = new ArrayList();
         HashMap row;
         
 		row = new HashMap();
@@ -445,7 +450,7 @@ public class TestUnpack extends junit.framework.TestCase {
         row.put("seeAlso","cn=Audi");
         rowsExp.add(row);
         
-        LinkedList rows = pack.getRows();
+        ArrayList rows = pack.getRows();
         
         assertTrue("Tables Don't Match\n\n" + this.formTable(rowsExp) + "\n\n" + this.formTable(rows),compareTables(fieldsExp,rowsExp,rows));
         
@@ -465,13 +470,13 @@ public class TestUnpack extends junit.framework.TestCase {
         sel.getArgs()[0] = "Peons";
         sel.getArgs()[1] = "A*";
         
-        NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
-        if (! enum.hasMore()) System.out.println("no results");
+        LDAPMessageQueue enum = (LDAPMessageQueue) sel.executeQuery();
+        //if (! enum.hasMore()) System.out.println("no results");
         
         UnpackResults pack = new UnpackResults(con);
-        pack.unpack(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
+        pack.unpackJldap(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
         
-        LinkedList fieldsExp = new LinkedList();
+        ArrayList fieldsExp = new ArrayList();
         
         
         fieldsExp.add("sn");
@@ -487,7 +492,7 @@ public class TestUnpack extends junit.framework.TestCase {
         fieldsExp.put("seeAlso",field);
         */
         
-        LinkedList fields = pack.getFieldNames();
+        ArrayList fields = pack.getFieldNames();
         
         Iterator it = fields.iterator();
         
@@ -498,7 +503,7 @@ public class TestUnpack extends junit.framework.TestCase {
             }
         }
         
-        LinkedList rowsExp = new LinkedList();
+        ArrayList rowsExp = new ArrayList();
         HashMap row;
         
 		row = new HashMap();
@@ -529,7 +534,7 @@ public class TestUnpack extends junit.framework.TestCase {
         row.put("seeAlso","cn=Audi");
         rowsExp.add(row);
         
-        LinkedList rows = pack.getRows();
+        ArrayList rows = pack.getRows();
         
         assertTrue("Tables Don't Match\n\n" + this.formTable(rowsExp) + "\n\n" + this.formTable(rows),compareTables(fieldsExp,rowsExp,rows));
         
@@ -543,7 +548,7 @@ public class TestUnpack extends junit.framework.TestCase {
      *@param t2 Table 2
      *@return True if tables content is equal
      */
-    boolean compareTables(LinkedList f1,LinkedList t1, LinkedList t2) {
+    boolean compareTables(ArrayList f1,ArrayList t1, ArrayList t2) {
         int i,j;
         HashMap r1,r2;
         Iterator it;
@@ -577,14 +582,14 @@ public class TestUnpack extends junit.framework.TestCase {
      *Creates a string representation of a table
      *@param t Table to create
      */
-    String formTable(LinkedList t) {
+    String formTable(ArrayList t) {
         StringBuffer buff = new StringBuffer();
         HashMap r1;
         String field;
         int i;
         Iterator it;
         try {
-            it = ((HashMap) t.getFirst()).keySet().iterator();
+            it = ((HashMap) t.get(0)).keySet().iterator();
         }
         catch (Exception e) {
             return "";

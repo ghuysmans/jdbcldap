@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -109,7 +109,7 @@ public class JdbcLdapSelect extends com.octetstring.jdbcLdap.sql.statements.Jdbc
 
     /** Executes the current statement and returns the results  */
     public Object executeQuery() throws SQLException {
-        return search.search(this);
+        return search.searchJldap(this);
     }
     
      /** Creates new JdbcLdapSql using a connection, a SQL Statement and a cached SqlStore*/

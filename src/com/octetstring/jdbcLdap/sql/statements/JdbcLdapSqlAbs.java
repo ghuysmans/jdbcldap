@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -20,6 +20,7 @@
 
 package com.octetstring.jdbcLdap.sql.statements;
 
+import com.novell.ldap.LDAPConnection;
 import com.octetstring.jdbcLdap.jndi.*;
 import com.octetstring.jdbcLdap.sql.*;
 import java.sql.*;
@@ -171,6 +172,10 @@ public abstract class JdbcLdapSqlAbs implements JdbcLdapSql {
         return con.getContext();
     }
     
+    public LDAPConnection getConnection() {
+    	return con.getConnection();
+    }
+    
     /**
      *Returns the base context for the search
      */
@@ -243,6 +248,12 @@ public abstract class JdbcLdapSqlAbs implements JdbcLdapSql {
 				return rdnComponents;
 			}
     
+    public String getConnectionBase() {
+    	return con.getBaseContext();
+    }
     
     
+    public JndiLdapConnection getJDBCConnection () {
+    		return this.con;
+    }
 }

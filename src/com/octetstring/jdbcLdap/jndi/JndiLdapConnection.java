@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -20,19 +20,29 @@
 
 package com.octetstring.jdbcLdap.jndi;
 
+import java.net.MalformedURLException;
 import java.sql.*;
-import javax.naming.*;
+
+import com.novell.ldap.*;
+
 import javax.naming.directory.*;
-import javax.naming.ldap.*;
+
+
+
 import java.util.*;
 import com.octetstring.jdbcLdap.sql.*;
-import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSql;
+import com.octetstring.jdbcLdap.sql.statements.JdbcLdapInsert;
+import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSelect;
+
+import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSqlAbs;
 
 /**
  * Wraps a Jndi Connection to an LDAP server
  *@author Marc Boorshtein, OctetString
  */
 public class JndiLdapConnection implements java.sql.Connection {
+	/** URL parameter containing the DSMLv2 Base */
+	public static final String DSML_BASE_DN = "DSML_BASE_DN";
 	public final static String LDAP_COMMA = "\\,";
 		public final static String LDAP_EQUALS = "\\=";
 		public final static String LDAP_PLUS = "\\+";
@@ -72,11 +82,13 @@ public class JndiLdapConnection implements java.sql.Connection {
     /** OPTIONAL - States if statements should be cached.  Default is false */
     public static final String CACHE_STATEMENTS = "CACHE_STATEMENTS";
     
-    /** The JNDI factory for connecting */
-    public static final String JNDI_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
+
+    public static final String PRE_FETCH = "PRE_FETCH";
     
-    /** The JNDI DSML factory*/
-    public static final String JNDI_DSML_FACTORY = "com.sun.jndi.dsmlv2.soap.DsmlSoapCtxFactory";
+    public static final String SIZE_LIMIT = "SIZE_LIMIT";
+    
+    public static final String TIME_LIMIT = "TIME_LIMIT";
+    
     
     /** OPTIONAL - States if transaction calls should be ignored, default to false */
     public static final String IGNORE_TRANSACTIONS = "IGNORE_TRANSACTIONS";
@@ -102,7 +114,8 @@ public class JndiLdapConnection implements java.sql.Connection {
     HashMap statements;
     
     /** LDAP connection */
-    DirContext con;
+    LDAPConnection con;
+    
     
     /**Stores properties for initialization */
     Hashtable env;
@@ -111,7 +124,7 @@ public class JndiLdapConnection implements java.sql.Connection {
     boolean cacheStatements;
     
     /** Determines if rows are expanded */
-    boolean expandRow;
+    boolean expandRow = false;
     
     /** The default search scope */
     String scope;
@@ -127,12 +140,16 @@ public class JndiLdapConnection implements java.sql.Connection {
     
     /** temporary string buffer */
     StringBuffer tmpBuff;
+	private boolean ignoreTransactions;
+	
+	/** Determine if all entries should be retrieved instead of 1 at a time */
+	boolean preFetch;
+	private int size;
+	private int time;
+	
+	private boolean isDsml;
     
-    /** determines if the connection is dsmlv2 */
-    boolean isDsml;
-    
-    /** determines if a transaction should be ignored */
-    boolean ignoreTransactions;
+
     
     /*
      *Public methods not part of java.sql.Connection
@@ -180,7 +197,7 @@ public class JndiLdapConnection implements java.sql.Connection {
      *Returns the context used to connect
      */
     public DirContext getContext() {
-        return this.con;
+        return null;
     }
     
     /**
@@ -203,13 +220,25 @@ public class JndiLdapConnection implements java.sql.Connection {
 	    return this.baseDN;
     }
     
-    
+    public JndiLdapConnection(LDAPConnection connection) {
+    		statements = new HashMap();
+        sql2ldap = new SqlToLdap();
+        env = new Hashtable();
+        this.concatAtts = false;
+        boolean authFound = false;
+        this.tmpBuff = new StringBuffer();
+        
+        this.con = connection;
+        this.baseDN = "";
+        this.cacheStatements = true;
+    }
     /**
      *Initializes the Connection with a set of properties
      *@param url URL of the server in the form ldap://server:port/base dn
      *@param props Properties correspinding to Conneciton Constants
      */
     public JndiLdapConnection(String url, Properties props) throws SQLException {
+    	
         statements = new HashMap();
         sql2ldap = new SqlToLdap();
         env = new Hashtable();
@@ -220,18 +249,61 @@ public class JndiLdapConnection implements java.sql.Connection {
         isDsml = url.startsWith(JdbcLdapDriver.DSML_URL_ID);
         
         Enumeration en = props.propertyNames();
-//        System.out.println("JndiLdapConnection.<init>: url="+url);
-        baseDN = url.substring(url.lastIndexOf('/') + 1);
-//       	System.out.println("JndiLdapConnection.<init>: baseDN="+baseDN); 
+
+        
+ 
         String prop;
         String user=null, pass=null ;
-        env.put(Context.INITIAL_CONTEXT_FACTORY,isDsml ? JNDI_DSML_FACTORY : JNDI_FACTORY);
-		//env.put(Context.INITIAL_CONTEXT_FACTORY,JNDI_DSML_FACTORY);
-        if (isDsml) {
-        	env.put(Context.PROVIDER_URL,url.substring(ELIM_JDBC_DSML));
+
+        this.preFetch = true;
+        boolean secure = false;
+        boolean isLDAP = url.startsWith("jdbc:ldap");
+        //determine if this is a ldap connection or dsmlv2
+        
+        while (en.hasMoreElements()) {
+            prop = (String) en.nextElement();
+            if (prop.equalsIgnoreCase(SECURE)) {
+            		if (props.getProperty(prop) != null && props.getProperty(prop).equalsIgnoreCase("true")) {
+            			secure = true;
+            		}
+            }
         }
-        else {
-        	env.put(Context.PROVIDER_URL,url.substring(ELIM_JDBC));
+        
+        en = props.propertyNames();
+        
+        if (isLDAP) {
+	        if (secure) {
+        			con = new LDAPConnection(new LDAPJSSESecureSocketFactory());
+	        } else {
+	        		con = new LDAPConnection();
+	        }
+	        LDAPUrl ldapUrl;
+	        
+	        
+	        
+	        
+	        try {
+				ldapUrl = new LDAPUrl(url.substring(ELIM_JDBC));
+				con.connect(ldapUrl.getHost(),ldapUrl.getPort());
+			} catch (MalformedURLException e1) {
+				throw new SQLNamingException(e1);
+			} catch (LDAPException e1) {
+				throw new SQLNamingException(e1);
+			}
+			
+			baseDN = ldapUrl.getDN();
+			if (baseDN == null) {
+				baseDN = "";
+			}
+        } else {
+        	con = new DsmlConnection();
+        	try {
+				con.connect(url.substring(ELIM_JDBC_DSML),0);
+			} catch (LDAPException e1) {
+				throw new SQLNamingException(e1);
+			}
+			
+			baseDN = props.getProperty(DSML_BASE_DN,"");
         }
         
         while (en.hasMoreElements()) {
@@ -253,58 +325,52 @@ public class JndiLdapConnection implements java.sql.Connection {
                 scope = props.getProperty(prop);
             }
             else if (prop.equalsIgnoreCase(AUTHENTICATION_TYPE)) {
-                
-                env.put(Context.SECURITY_AUTHENTICATION,props.getProperty(prop));
+            	//TODO Support TLS
+                //env.put(Context.SECURITY_AUTHENTICATION,props.getProperty(prop));
             }
             else if (prop.equalsIgnoreCase(CONCAT_ATTS))     {
                 this.concatAtts = props.getProperty(prop).equalsIgnoreCase("true");
             }
-            else if (prop.equalsIgnoreCase(SECURE)) {
-            	if (props.getProperty(prop).equalsIgnoreCase("true")) {
-        			env.put(Context.SECURITY_PROTOCOL, "ssl");
-            	}
-            } else if (prop.equalsIgnoreCase(IGNORE_TRANSACTIONS)) {
+            
+            else if (prop.equalsIgnoreCase(IGNORE_TRANSACTIONS)) {
             		this.ignoreTransactions = props.getProperty(prop).equalsIgnoreCase("true");
+            } else if (prop.equalsIgnoreCase(PRE_FETCH)) {
+            	this.preFetch = PRE_FETCH.equalsIgnoreCase(props.getProperty(prop));
+            } else if (prop.equalsIgnoreCase(SIZE_LIMIT)) {
+            		this.size = Integer.parseInt(props.getProperty(prop));
+            		
+            } else if (prop.equalsIgnoreCase(TIME_LIMIT)) {
+	        		this.time = Integer.parseInt(props.getProperty(prop));
+	        		if (time > 0) {
+		        		LDAPConstraints genconstraints = con.getConstraints();
+		        		genconstraints.setTimeLimit(time);
+		        		con.setConstraints(genconstraints);
+	        		}
             }
+            
+            
             else {
-                env.put(prop,props.getProperty(prop));
+                //env.put(prop,props.getProperty(prop));
+            	//TODO map other properties
             }
             
         }
         
-        if (env.get(Context.SECURITY_AUTHENTICATION) == null || !((String) env.get(Context.SECURITY_AUTHENTICATION)).equalsIgnoreCase(NO_AUTHENTICATION)) {
-            
-            if (user != null && pass != null) {
-                env.put(Context.SECURITY_PRINCIPAL,user);
-                env.put(Context.SECURITY_CREDENTIALS,pass);
-            
-                if (env.get(Context.SECURITY_AUTHENTICATION) == null) {
-                    env.put(Context.SECURITY_AUTHENTICATION,SIMPLE_AUTHENTICATION);
-                }
-            }
-            else {
-                env.put(Context.SECURITY_AUTHENTICATION,NO_AUTHENTICATION);
-            }
-        }
+        try {
+			if (user != null && pass != null) con.bind(3,user,pass.getBytes());
+        	
+		} catch (LDAPException e) {
+			throw new SQLNamingException(e);
+		}
              
        
         
-        try {
-            con = new InitialDirContext(env);
-            //System.out.println("JndiLdapConnection.<init>: called InitialDirContext");
-           
-            
-        }
-        catch (NamingException e) {
-         throw new SQLNamingException(e);
-        }
         
         
         
         
-        if (this.isClosed()) {
-            throw new SQLException("Connection Failed");
-        }
+        
+        
         
     }
 
@@ -320,11 +386,10 @@ public class JndiLdapConnection implements java.sql.Connection {
     
     public void close() throws java.sql.SQLException {
         try {
-            con.close();
-        }
-        catch (NamingException e) {
-            throw new SQLNamingException(e);
-        }
+			if (con != null) con.disconnect();
+		} catch (LDAPException e) {
+			throw new SQLNamingException(e);
+		}
     }
     
     public void commit() throws java.sql.SQLException {
@@ -334,13 +399,7 @@ public class JndiLdapConnection implements java.sql.Connection {
     }
     
     public boolean isClosed() throws java.sql.SQLException {
-        try {
-            return con == null || con.lookup("") == null;
-        }
-        catch (NamingException e) {
-            //e.printStackTrace(System.out);
-            return false;
-        }
+        return con == null || ! con.isConnectionAlive();
         
         
         
@@ -374,6 +433,7 @@ public class JndiLdapConnection implements java.sql.Connection {
 			}
 			
 			
+			System.out.println("cleaned? : " + tmpBuff.toString());
 			
 			return tmpBuff.toString();
 		}
@@ -536,5 +596,79 @@ public class JndiLdapConnection implements java.sql.Connection {
 	public void setScope(String string) {
 		scope = string;
 	}
+	
+	/**
+	 * Retrieves the LDAPConnection
+	 * @return
+	 */
+	public LDAPConnection getConnection() {
+		return this.con;
+	}
+	
+	public String getBaseContext() {
+		return this.baseDN;
+	}
+	
+	/**
+	 * @param sql
+	 * @return
+	 */
+	public static String getRealBase(JdbcLdapSqlAbs sql) {
+		String localBase;
+		if (sql instanceof JdbcLdapInsert) {
+			localBase = ((JdbcLdapInsert) sql).getDistinguishedName();
+		}
+		else {
+			localBase = sql.getBaseContext();
+		}
+		String base = sql.getConnectionBase();
+		boolean appendBase = base != null && base.trim().length() != 0 && ! localBase.endsWith(base);
+		boolean useComma = localBase.trim().length() != 0;
+		String useBase = (appendBase ? localBase + (useComma ? "," : "") + base : localBase);
+		return useBase;
+	}
+	
+	public LDAPSearchResults search(String SQL) throws SQLException {
+		JdbcLdapSelect search = new JdbcLdapSelect(); 
+		search.init(this,SQL);
+		return (LDAPSearchResults) search.executeQuery();
+		
+	}
 
+	/**
+	 * @return Returns the preFetch.
+	 */
+	public boolean isPreFetch() {
+		return preFetch;
+	}
+	/**
+	 * @param preFetch The preFetch to set.
+	 */
+	public void setPreFetch(boolean preFetch) {
+		this.preFetch = preFetch;
+	}
+	
+	public void setMaxSizeLimit(int size) {
+		this.size = size;
+	}
+	
+	public void setMaxTimeLimit(int time) {
+		this.time = time;
+	}
+	
+	
+	public int getMaxSizeLimit() {
+		return this.size;
+	}
+	
+	public int getMaxTimeLimit() {
+		return this.time;
+	}
+
+	/**
+	 * @return
+	 */
+	public boolean isDSML() {
+		return this.isDsml;
+	}
 }

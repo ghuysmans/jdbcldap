@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -20,7 +20,10 @@
 
 package com.octetstring.jdbcLdap.sql;
 
+import java.sql.SQLException;
 import java.util.*;
+
+import com.octetstring.jdbcLdap.jndi.SQLNamingException;
 
 /**
  *
@@ -37,6 +40,12 @@ public class SqlToLdap {
     
     /** SQL Representation of NOT */
     public static final String SQL_NOT = "NOT";
+    
+    /** SQL Representation of NULL */
+    public static final String SQL_NULL = "NULL";
+    
+    /** SQL Representation of IS */
+    public static final String SQL_IS = "IS";
     
     /** Left Parenthasese **/
     public static final char LEFT_PAR = '(';
@@ -85,7 +94,7 @@ public class SqlToLdap {
      *@param curr Current element
      */
     boolean isCmd(String curr) {
-        return (curr.equalsIgnoreCase(SR_PAR)) || (curr.equalsIgnoreCase(SQL_AND)) || (curr.equalsIgnoreCase(SQL_OR)) || (curr.equalsIgnoreCase(SQL_NOT));
+        return (curr.equalsIgnoreCase(SR_PAR)) || (curr.equalsIgnoreCase(SQL_AND)) || (curr.equalsIgnoreCase(SQL_OR)) || (curr.equalsIgnoreCase(SQL_NOT) );
     }
     
     /**
@@ -132,22 +141,27 @@ public class SqlToLdap {
     /**
      *Converts a SQL expresion into and LDAP expression
      *@param expr SQL Expresion to convert
+     * @throws SQLException
      */
-    public String convertToLdap(String expr) {
+    public String convertToLdap(String expr) throws SQLException {
        LinkedList list = inOrder(expr);
+       
        Stack elements = new Stack();
        Stack opps = new Stack();
        Node tree;
        String curr;
-       
+       String currUCase;
        Iterator it = list.iterator();
        while (it.hasNext()) {
             
             curr = (String) it.next();
+            
             while (curr.trim().length() == 0 && it.hasNext()) {
                 curr = (String) it.next();
+                
             }
             
+            currUCase = curr.toUpperCase();
             
             if (curr.equalsIgnoreCase(SL_PAR)) {
                 tree = new Node();
@@ -156,25 +170,43 @@ public class SqlToLdap {
                 tree.r = null;
                 opps.push(tree);
             }
-            else if (isCmd(curr)) {
+            else if (isCmd(currUCase)) {
                 if (curr.equalsIgnoreCase(SR_PAR)) {
                     procStack(opps,elements,((Integer) order.get(SR_PAR)).intValue());
                 }
-                else if (lastNodeGreater(opps,curr)) {
-                    procStack(opps,elements,((Integer) order.get(curr)).intValue());
+                else if (lastNodeGreater(opps,currUCase)) {
+                    procStack(opps,elements,((Integer) order.get(currUCase)).intValue());
                     tree = new Node();
                     tree.l = null;
                     tree.r = null;
-                    tree.type = ((Integer) order.get(curr)).intValue();
+                    tree.type = ((Integer) order.get(currUCase)).intValue();
                     opps.push(tree);
                 }
                 else {
                     tree = new Node();
                     tree.l = null;
                     tree.r = null;
-                    tree.type = ((Integer) order.get(curr)).intValue();
+                    tree.type = ((Integer) order.get(currUCase)).intValue();
                     opps.push(tree);
                 }
+            } else if (currUCase.equals(SQL_IS)) {
+            		String next = (String) it.next();
+            		
+            		if (next.equalsIgnoreCase(SQL_NULL)) { 
+            			tree = (Node) elements.peek();
+            			tree.val = "!(" + tree.val + "=*)";
+            		} else if (next.equalsIgnoreCase(SQL_NOT)) {
+            			String next2 = (String) it.next();
+            			if (! next2.equalsIgnoreCase(SQL_NULL)) {
+            				throw new SQLException("Unexpected token near IS");
+            			}
+            			
+            			tree = (Node) elements.peek();
+            			tree.val = tree.val + "=*";
+            			
+            		} else {
+            			throw new SQLException("Unexpected token near IS");
+            		}
             }
             else {
                 tree = new Node();
@@ -219,7 +251,8 @@ public class SqlToLdap {
                 //add buffer to list
                 if (buf.length() != 0) {
                     if (! addToList(list,buf)) {
-                        list.add(buf.toString().trim());
+ 
+                        list.add(transformToFilter(new StringBuffer(buf.toString().trim())));
                         buf.setLength(0);
                     }
                 }
@@ -241,13 +274,78 @@ public class SqlToLdap {
         }
         
         if (buf.length() != 0) {
-            list.add(buf.toString().trim());
+        	
+        		String stmp = transformToFilter(buf);
+            list.add(stmp);
         }
         
         return list;
     }
     
-    boolean addToList(LinkedList list, StringBuffer buf) {
+    /**
+	 * @param buf
+	 * @return
+	 */
+	private String transformToFilter(StringBuffer buf) {
+		String stmp = buf.toString().trim();
+
+		int like = stmp.toLowerCase().indexOf(" like ");
+		if (like != -1) {
+			buf.setLength(0);
+			buf.append(stmp);
+			buf.delete(like,6);
+			buf.insert(like,'=');
+			stmp = buf.toString();
+		}
+		
+		if (stmp.charAt(0) == '\'') {
+			stmp = stmp.substring(1);
+		}
+		
+		int equals = stmp.indexOf('=');
+		if (equals != -1) {
+			int quote = stmp.indexOf('\'',equals);
+			if (quote != -1 && stmp.charAt(quote - 1) != '\\') {
+				buf.setLength(0);
+				buf.append(stmp);
+				buf.delete(equals + 1,quote + 1);
+				stmp = buf.toString();
+			}
+		}
+		
+		
+		
+		int wc = stmp.indexOf('%');
+		if (wc != -1) {
+			buf.setLength(0);
+			buf.append(stmp);
+			if (buf.charAt(wc - 1) != '\\') {
+				buf.setCharAt(wc,'*');
+			} else {
+				buf.deleteCharAt(wc - 1);
+				wc--;
+				
+			}
+			wc = buf.indexOf("%",wc + 1);
+			while (wc != -1) {
+				if (buf.charAt(wc - 1) != '\\') {
+					buf.setCharAt(wc,'*');
+				} else {
+					buf.deleteCharAt(wc - 1);
+					wc--;
+				}
+				wc = buf.indexOf("%",wc + 1);
+			}
+			stmp = buf.toString();
+		}
+		
+		if (stmp.charAt(stmp.length() - 1) == '\'' && stmp.charAt(stmp.length() - 2) != '\\') {
+			stmp = stmp.substring(0,stmp.length() - 1);
+		}
+		return stmp;
+	}
+
+	boolean addToList(LinkedList list, StringBuffer buf) {
         int space = buf.toString().lastIndexOf(' ');
         boolean added = false;
         
@@ -256,17 +354,22 @@ public class SqlToLdap {
       
         
         if (buf.toString().trim().equalsIgnoreCase(SQL_NOT)) {
-            list.add(buf.toString().trim());
+            list.add(this.transformToFilter(buf));
             
             buf.setLength(0);
         }
         else if ((buf.substring(space + 1).equalsIgnoreCase(SQL_AND)) || 
             (buf.substring(space + 1).equalsIgnoreCase(SQL_OR)) ||
-            (buf.substring(space + 1).equalsIgnoreCase(SQL_NOT)) )
+            (buf.substring(space + 1).equalsIgnoreCase(SQL_NOT)) ||
+            (buf.substring(space + 1).equalsIgnoreCase(SQL_IS)) ||  
+			(buf.substring(space + 1).equalsIgnoreCase(SQL_IS)) )
         {
             add =buf.substring(0,space).trim();
-            if (add.length() != 0)
-                list.add(buf.substring(0,space).trim());
+            if (add.length() != 0) {
+            		String tmp  = buf.substring(0,space).trim();
+            		
+                list.add(this.transformToFilter(new StringBuffer(tmp)));
+            }
             
             list.add(buf.substring(space + 1).trim());
             

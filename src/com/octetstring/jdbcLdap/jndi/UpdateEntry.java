@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -14,11 +14,12 @@
 package com.octetstring.jdbcLdap.jndi;
 
 import java.util.*;
-import javax.naming.*;
-import javax.naming.directory.*;
+
 import java.sql.*;
 import com.octetstring.jdbcLdap.sql.statements.*;
 import com.octetstring.jdbcLdap.util.*;
+import com.novell.ldap.*;
+
 /**
  * @author mlb
  *
@@ -28,18 +29,20 @@ import com.octetstring.jdbcLdap.util.*;
 public class UpdateEntry {
 	RetrieveResults res = new RetrieveResults();
 	
-	public int doUpdateEntry(JdbcLdapUpdateEntry stmt) throws SQLException {
+	
+	
+	public int doUpdateEntryJldap(JdbcLdapUpdateEntry stmt) throws SQLException {
 		int argPos = 0;
 		StringBuffer dn = new StringBuffer();
 		//first we need to construct the dn
 		/*String[] dnlist = stmt.getDnlist();
-		for (int i=0,m=dnlist.length;i<m;i++) {
-			dn.append(dnlist[i]);
-			//System.out.println("i,m :" + i + "," + m);
-			if (i < m-1) {
-				dn.append(stmt.getArgVals()[i]);
-			}
-		}*/
+		 for (int i=0,m=dnlist.length;i<m;i++) {
+		 dn.append(dnlist[i]);
+		 //System.out.println("i,m :" + i + "," + m);
+		 if (i < m-1) {
+		 dn.append(stmt.getArgVals()[i]);
+		 }
+		 }*/
 		
 		
 		
@@ -49,18 +52,18 @@ public class UpdateEntry {
 		int paramnum = 0;
 		while (icmds.hasNext()) {
 			us = (UpdateSet) icmds.next();
-		
-		
+			
+			
 			int modtype;
 			
 			if (us.getCmd().equalsIgnoreCase(JdbcLdapUpdateEntry.ADD)) {
-				modtype = DirContext.ADD_ATTRIBUTE;
+				modtype = LDAPModification.ADD;
 			}
 			else if (us.getCmd().equalsIgnoreCase(JdbcLdapUpdateEntry.DELETE)) {
-				modtype = DirContext.REMOVE_ATTRIBUTE;
+				modtype = LDAPModification.DELETE;
 			}
 			else {
-				modtype = DirContext.REPLACE_ATTRIBUTE;
+				modtype = LDAPModification.REPLACE;
 			}
 			
 			
@@ -72,7 +75,7 @@ public class UpdateEntry {
 			int i = 0;
 			ArrayList al = new ArrayList();
 			while (it.hasNext()) {
-				if (modtype == DirContext.ADD_ATTRIBUTE || modtype == DirContext.REPLACE_ATTRIBUTE) {
+				if (modtype == LDAPModification.ADD || modtype == LDAPModification.REPLACE) {
 					p = (Pair) it.next();
 					name = p.getName();
 					
@@ -89,80 +92,51 @@ public class UpdateEntry {
 					
 					
 					//System.out.println("moditem : " + modtype + ", " + name + "=" + val);
-					mods.add(new ModificationItem(modtype,new BasicAttribute(name,val)));
-	 			}
-	 			else {
-	 				Object o = it.next();
-	 				if (o instanceof String) {
-		 				name = (String) o;
-						//System.out.println("moditem : " + modtype + ", " + name);
-		 				mods.add(new ModificationItem(modtype,new BasicAttribute(name)));
-	 				} else {
-	 					p = (Pair) o;
-						name = p.getName();
-						
-						if (p.getValue().equals("?")) {
-							//System.out.println("paramnum : " + paramnum);
-							//System.out.println("val : " + stmt.getArgVals()[paramnum]);
-							val = stmt.getArgVals()[paramnum];
-							paramnum++;
-							//i++;
-						}
-						else {
-							val = p.getValue();
-						}
-						
-						
-						//System.out.println("moditem : " + modtype + ", " + name + "=" + val);
-						mods.add(new ModificationItem(modtype,new BasicAttribute(name,val)));
-	 				}
-	 			}
-	 			i++;
+					mods.add(new LDAPModification(modtype,new LDAPAttribute(name,val)));
+				}
+				else {
+					name = (String) it.next();
+					//System.out.println("moditem : " + modtype + ", " + name);
+					mods.add(new LDAPModification(modtype,new LDAPAttribute(name)));
+				}
+				i++;
 			}
 		}
 		
 		Object[] toCopy = mods.toArray();
-		ModificationItem[] doMods = new ModificationItem[toCopy.length];
+		LDAPModification[] doMods = new LDAPModification[toCopy.length];
 		System.arraycopy(toCopy,0,doMods,0,doMods.length);
-		SearchResult seres;
+		LDAPEntry entry;
 		StringBuffer buf = new StringBuffer();
 		String name;
 		try {
 			int count = 0;
-			
-			if (stmt.getSearchScope() == SearchControls.OBJECT_SCOPE && stmt.getFilterWithParams().equalsIgnoreCase("(objectClass=*)")) {
-				stmt.getContext().modifyAttributes(stmt.getSqlStore().getDistinguishedName(),doMods);
-				count++;
-			} else {
-			
-				NamingEnumeration enum = res.searchUpIns(stmt);
+			if (stmt.getSearchScope() != 0) {
+				LDAPSearchResults enum = res.searchUpInsJldap(stmt);
 				while (enum.hasMore()) {
-								seres = (SearchResult) enum.next();
-								buf.setLength(0);
-								String entryName = seres.getName();
-	                
-								if (seres.getName().trim().length() > 0) {
-	                
-									name = buf.append(entryName).append(',').append(stmt.getSqlStore().getDistinguishedName()).toString();
-								}
-								else {
-									name = stmt.getSqlStore().getDistinguishedName();
-								}
-	                
-								//System.out.println("name : " + name);
-	                
-	                
-								stmt.getContext().modifyAttributes(name,doMods);
-								count++;
-								//System.out.println("count : " + count);
-							}
-	            
-							enum.close();
+					entry = enum.next();
+					buf.setLength(0);
+					
+					name = entry.getDN();
+					
+					//System.out.println("name : " + name);
+					
+					
+					stmt.getConnection().modify(name,doMods);
+					count++;
+					//System.out.println("count : " + count);
+				
+				}
+			} else {
+				stmt.getConnection().modify(stmt.getBaseContext(),doMods);
+				count++;
 			}
-						//System.out.println("final count : " + count);
-						return count;
+			
+			
+			//System.out.println("final count : " + count);
+			return count;
 			//stmt.getContext().modifyAttributes(dn.toString(),doMods);
-		} catch (NamingException ne) {
+		} catch (LDAPException ne) {
 			throw new SQLNamingException(ne);
 		}
 	}

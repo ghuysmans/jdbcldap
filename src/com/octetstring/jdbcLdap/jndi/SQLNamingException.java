@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -22,7 +22,9 @@ package com.octetstring.jdbcLdap.jndi;
 
 import java.sql.*;
 import javax.naming.*;
-
+import com.novell.ldap.util.*;
+import com.novell.ldap.*;
+import java.net.*;
 
 /**
  *Translates a JndiException to a SQLException
@@ -31,10 +33,20 @@ import javax.naming.*;
  */
 
 public class SQLNamingException extends java.sql.SQLException {
-    NamingException e;
+    Exception e;
+    
+    
     /** Creates new SQLNamingExcepton */
     public SQLNamingException(NamingException e) {
         this.e = e;
+    }
+    
+    public SQLNamingException(LDAPException e) {
+    	this.e = e;
+    }
+    
+    public SQLNamingException(MalformedURLException e) {
+    	this.e = e;
     }
 
     protected java.lang.Object clone() throws java.lang.CloneNotSupportedException {
@@ -92,7 +104,11 @@ public class SQLNamingException extends java.sql.SQLException {
     }
     
     public int getErrorCode() {
-        return 0;
+    		if (e instanceof LDAPException) {
+    			return ((LDAPException) e).getResultCode();
+    		} else {
+    			return 0;
+    		}
     }
     
     public java.sql.SQLException getNextException() {
@@ -107,7 +123,7 @@ public class SQLNamingException extends java.sql.SQLException {
         
     }
     
-    public NamingException getNamingException() {
+    public Exception getNamingException() {
     	return this.e;
     }
     

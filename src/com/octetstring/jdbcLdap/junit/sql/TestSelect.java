@@ -1,6 +1,6 @@
 /* **************************************************************************
  *
- * Copyright (C) 2002-2004 Octet String, Inc. All Rights Reserved.
+ * Copyright (C) 2002-2005 Octet String, Inc. All Rights Reserved.
  *
  * THIS WORK IS SUBJECT TO U.S. AND INTERNATIONAL COPYRIGHT LAWS AND
  * TREATIES. USE, MODIFICATION, AND REDISTRIBUTION OF THIS WORK IS SUBJECT
@@ -347,5 +347,297 @@ public class TestSelect extends junit.framework.TestCase {
         
         
     }
+    
+    /**
+     *Parses:SELECT * FROM dc=idrs,dc=com WHERE ou=Payroll OR ou=Peons
+     */
+    public void testSQLWhereSpace() throws SQLException  {
+        String sql = "SELECT * FROM dc=idrs,dc=com WHERE cn=Marge Chima";
+        JdbcLdapSelect sel = new JdbcLdapSelect();
+        sel.init(con,sql);
+        int i;
+        
+        String[] fields = sel.getSearchAttributes();
+        
+        
+        if (fields.length != 0) {
+            fail("Fields don't match");
+            return;
+        }
+        
+        if (! sel.getBaseContext().equalsIgnoreCase("dc=idrs,dc=com")) {
+            fail("FROM not correct");
+            return;
+        }
+        
+        if (! sel.getSearchString().equalsIgnoreCase("(cn=Marge Chima)")) {
+            fail("WHERE not correct\n(cn=Marge Chima) !=" + sel.getSearchString());
+            return;
+        }
+        
+        if (sel.getSearchScope() != SearchControls.SUBTREE_SCOPE) {
+            fail("Scope's not equal");
+            return;
+        }
+        
+        assertTrue(true);
+        
+        
+        
+    }
+    
+    public void testSQLWhereSpaceQuotes() throws SQLException  {
+        String sql = "SELECT * FROM dc=idrs,dc=com WHERE cn='Marge Chima'";
+        JdbcLdapSelect sel = new JdbcLdapSelect();
+        sel.init(con,sql);
+        int i;
+        
+        String[] fields = sel.getSearchAttributes();
+        
+        
+        if (fields.length != 0) {
+            fail("Fields don't match");
+            return;
+        }
+        
+        if (! sel.getBaseContext().equalsIgnoreCase("dc=idrs,dc=com")) {
+            fail("FROM not correct");
+            return;
+        }
+        
+        if (! sel.getSearchString().equalsIgnoreCase("(cn=Marge Chima)")) {
+            fail("WHERE not correct\n(cn=Marge Chima) !=" + sel.getSearchString());
+            return;
+        }
+        
+        if (sel.getSearchScope() != SearchControls.SUBTREE_SCOPE) {
+            fail("Scope's not equal");
+            return;
+        }
+        
+        assertTrue(true);
+        
+        
+        
+    }
+    
+    public void testSQLWhereSpaceQuotesWhiteSpace() throws SQLException  {
+        String sql = "SELECT * FROM dc=idrs,dc=com WHERE cn = 'Marge Chima'";
+        JdbcLdapSelect sel = new JdbcLdapSelect();
+        sel.init(con,sql);
+        int i;
+        
+        String[] fields = sel.getSearchAttributes();
+        
+        
+        if (fields.length != 0) {
+            fail("Fields don't match");
+            return;
+        }
+        
+        if (! sel.getBaseContext().equalsIgnoreCase("dc=idrs,dc=com")) {
+            fail("FROM not correct");
+            return;
+        }
+        
+        if (! sel.getSearchString().equalsIgnoreCase("(cn =Marge Chima)")) {
+            fail("WHERE not correct\n(cn =Marge Chima) !=" + sel.getSearchString());
+            return;
+        }
+        
+        if (sel.getSearchScope() != SearchControls.SUBTREE_SCOPE) {
+            fail("Scope's not equal");
+            return;
+        }
+        
+        assertTrue(true);
+        
+        
+        
+    }
+    
+    public void testSQLWhereLIKE() throws SQLException  {
+        String sql = "SELECT * FROM dc=idrs,dc=com WHERE cn LIKE '\\%Ma%\\%'";
+        JdbcLdapSelect sel = new JdbcLdapSelect();
+        sel.init(con,sql);
+        int i;
+        
+        String[] fields = sel.getSearchAttributes();
+        
+        
+        if (fields.length != 0) {
+            fail("Fields don't match");
+            return;
+        }
+        
+        if (! sel.getBaseContext().equalsIgnoreCase("dc=idrs,dc=com")) {
+            fail("FROM not correct");
+            return;
+        }
+        
+        if (! sel.getSearchString().equalsIgnoreCase("(cn=%Ma*%)")) {
+            fail("WHERE not correct\n(cn=%Ma*%) !=" + sel.getSearchString());
+            return;
+        }
+        
+        if (sel.getSearchScope() != SearchControls.SUBTREE_SCOPE) {
+            fail("Scope's not equal");
+            return;
+        }
+        
+        assertTrue(true);
+        
+        
+        
+    }
+    
+    
+    public void testSQLWhereLIKEOC() throws SQLException  {
+    		System.err.println("---------------------------");
+        //String sql = "SELECT * FROM dc=idrs,dc=com WHERE objectClass='*' AND cn LIKE '\\%Ma%\\%'";
+    	String sql = "SELECT * FROM dc=idrs,dc=com WHERE cn LIKE '\\%Ma%\\%' AND objectClass='*'";
+        JdbcLdapSelect sel = new JdbcLdapSelect();
+        sel.init(con,sql);
+        int i;
+        
+        String[] fields = sel.getSearchAttributes();
+        
+        
+        if (fields.length != 0) {
+            fail("Fields don't match");
+            return;
+        }
+        
+        if (! sel.getBaseContext().equalsIgnoreCase("dc=idrs,dc=com")) {
+            fail("FROM not correct");
+            return;
+        }
+        
+        if (! sel.getSearchString().equalsIgnoreCase("(&(cn=%Ma*%)(objectClass=*))")) {
+            fail("WHERE not correct\n(&(cn=%Ma*%)(objectClass=*)) !=" + sel.getSearchString());
+            return;
+        }
+        
+        if (sel.getSearchScope() != SearchControls.SUBTREE_SCOPE) {
+            fail("Scope's not equal");
+            return;
+        }
+        
+        assertTrue(true);
+        
+        
+        
+    }
+    
+    public void testSQLWhereLIKEPresence() throws SQLException  {
+		System.err.println("---------------------------");
+    //String sql = "SELECT * FROM dc=idrs,dc=com WHERE objectClass='*' AND cn LIKE '\\%Ma%\\%'";
+	String sql = "SELECT * FROM dc=idrs,dc=com WHERE objectClass IS NOT NULL AND cn LIKE '\\%Ma%\\%'";
+    JdbcLdapSelect sel = new JdbcLdapSelect();
+    sel.init(con,sql);
+    int i;
+    
+    String[] fields = sel.getSearchAttributes();
+    
+    
+    if (fields.length != 0) {
+        fail("Fields don't match");
+        return;
+    }
+    
+    if (! sel.getBaseContext().equalsIgnoreCase("dc=idrs,dc=com")) {
+        fail("FROM not correct");
+        return;
+    }
+    
+    if (! sel.getSearchString().equalsIgnoreCase("(&(objectClass=*)(cn=%Ma*%))")) {
+        fail("WHERE not correct\n(&(objectClass=*)(cn=%Ma*%)) !=" + sel.getSearchString());
+        return;
+    }
+    
+    if (sel.getSearchScope() != SearchControls.SUBTREE_SCOPE) {
+        fail("Scope's not equal");
+        return;
+    }
+    
+    assertTrue(true);
+    
+    
+    
+}
+    
+    public void testSQLWhereLIKENOTPresence() throws SQLException  {
+		System.err.println("---------------------------");
+    //String sql = "SELECT * FROM dc=idrs,dc=com WHERE objectClass='*' AND cn LIKE '\\%Ma%\\%'";
+	String sql = "SELECT * FROM dc=idrs,dc=com WHERE objectClass IS NULL AND cn LIKE '\\%Ma%\\%'";
+    JdbcLdapSelect sel = new JdbcLdapSelect();
+    sel.init(con,sql);
+    int i;
+    
+    String[] fields = sel.getSearchAttributes();
+    
+    
+    if (fields.length != 0) {
+        fail("Fields don't match");
+        return;
+    }
+    
+    if (! sel.getBaseContext().equalsIgnoreCase("dc=idrs,dc=com")) {
+        fail("FROM not correct");
+        return;
+    }
+    
+    if (! sel.getSearchString().equalsIgnoreCase("(&(!(objectClass=*))(cn=%Ma*%))")) {
+        fail("WHERE not correct\n(&(!(objectClass=*))(cn=%Ma*%)) !=" + sel.getSearchString());
+        return;
+    }
+    
+    if (sel.getSearchScope() != SearchControls.SUBTREE_SCOPE) {
+        fail("Scope's not equal");
+        return;
+    }
+    
+    assertTrue(true);
+    
+    
+    
+}
+    
+    public void testSQLWhereLIKEPresenceMixed() throws SQLException  {
+		System.err.println("---------------------------");
+    //String sql = "SELECT * FROM dc=idrs,dc=com WHERE objectClass='*' AND cn LIKE '\\%Ma%\\%'";
+	String sql = "SELECT * FROM dc=idrs,dc=com WHERE  (cn LIKE 'Clayton*' AND cn LIKE '*Donley') AND (objectClass IS NOT NULL AND cn IS NOt NULL)";
+    JdbcLdapSelect sel = new JdbcLdapSelect();
+    sel.init(con,sql);
+    int i;
+    
+    String[] fields = sel.getSearchAttributes();
+    
+    
+    if (fields.length != 0) {
+        fail("Fields don't match");
+        return;
+    }
+    
+    if (! sel.getBaseContext().equalsIgnoreCase("dc=idrs,dc=com")) {
+        fail("FROM not correct");
+        return;
+    }
+    
+    if (! sel.getSearchString().equalsIgnoreCase("(&(&(cn=Clayton*)(cn=*Donley))(&(objectClass=*)(cn=*)))")) {
+        fail("WHERE not correct\n(&(&(cn=Clayton*)(cn=*Donley))(&(objectClass=*)(cn=*))) !=" + sel.getSearchString());
+        return;
+    }
+    
+    if (sel.getSearchScope() != SearchControls.SUBTREE_SCOPE) {
+        fail("Scope's not equal");
+        return;
+    }
+    
+    assertTrue(true);
+    
+    
+    
+}
     
 }
