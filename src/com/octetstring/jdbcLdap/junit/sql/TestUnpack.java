@@ -49,7 +49,7 @@ public class TestUnpack extends junit.framework.TestCase {
     
     protected void setUp() throws java.lang.Exception {
         Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver");
-        con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope&CONCAT_ATTS:=true","cn=Admin","manager");
+		con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope",System.getProperty("ldapUser"),System.getProperty("ldapPass"));
     }
     
     /**
@@ -127,10 +127,86 @@ public class TestUnpack extends junit.framework.TestCase {
         
     }
     
+    
+    
+    public void testUnpackResultsMultiValExpRows() throws Exception {
+		((JndiLdapConnection) con).setConcatAtts(false);
+		((JndiLdapConnection) con).setExpandRow(true);
+		String sql = "SELECT objectClass,sn,ou,seeAlso FROM  WHERE ou=Peons AND sn=Zimmermann";
+				JdbcLdapSelect sel = new JdbcLdapSelect();
+				sel.init(con,sql);
+				String field;
+        
+        
+				NamingEnumeration enum = (NamingEnumeration) sel.executeQuery();
+        
+				UnpackResults pack = new UnpackResults(con);
+				pack.unpack(enum,sel.getRetrieveDN(),sel.getSqlStore().getFrom(),con.getBaseDN());
+        
+        
+				LinkedList fieldsExp = new LinkedList();
+        
+				fieldsExp.add("objectClass");
+				fieldsExp.add("sn");
+				fieldsExp.add("ou");
+				fieldsExp.add("seeAlso");
+        
+				/*
+				HashMap fieldsExp = new HashMap();
+				FieldStore field;
+				field = new FieldStore("objectClass",0);
+				fieldsExp.put("objectClass",field);
+				field = new FieldStore("sn",0);
+				fieldsExp.put("sn",field);
+				field = new FieldStore("ou",0);
+				fieldsExp.put("ou",field);
+				field = new FieldStore("seeAlso",0);
+				fieldsExp.put("seeAlso",field);
+				*/
+        
+				LinkedList fields = pack.getFieldNames();
+        
+				Iterator it = fields.iterator();
+        
+				while (it.hasNext()) {
+					field = (String) it.next();
+					if (! fieldsExp.contains(field)) {
+						fail("Incorrect fields returned : " + field);
+					}
+				}
+        
+		
+        
+				LinkedList rowsExp = new LinkedList();
+				HashMap row = new HashMap();
+				row.put("objectClass","top");
+				row.put("sn","Zimmermann");
+				row.put("ou","Peons");
+				row.put("seeAlso","cn=Aggy");
+				rowsExp.add(row);
+		row = new HashMap();
+						row.put("objectClass","person");
+						row.put("sn","Zimmermann");
+						row.put("ou","Peons");
+						row.put("seeAlso","cn=Aggy");
+						rowsExp.add(row);
+		row = new HashMap();
+						row.put("objectClass","organizationalPerson");
+						row.put("sn","Zimmermann");
+						row.put("ou","Peons");
+						row.put("seeAlso","cn=Aggy");
+						rowsExp.add(row);
+						
+		LinkedList rows = pack.getRows();
+        
+				assertTrue("Tables Don't Match\n\n" + this.formTable(rowsExp) + "\n\n" + this.formTable(rows),compareTables(fieldsExp,rowsExp,rows));
+    }
+    
     /**
      *Tests unpack results with multi-value attributes with concatenating on
      */
     public void testUnpackingResultsMultIValueConcat() throws Exception {
+        ((JndiLdapConnection) con).setConcatAtts(true);
         String sql = "SELECT objectClass,sn,ou,seeAlso FROM  WHERE ou=Peons AND cn=A*";
         JdbcLdapSelect sel = new JdbcLdapSelect();
         sel.init(con,sql);

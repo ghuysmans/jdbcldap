@@ -24,6 +24,7 @@ import javax.naming.*;
 import javax.naming.directory.*;
 import com.octetstring.jdbcLdap.sql.statements.*;
 import java.sql.*;
+import java.util.*;
 /**
  *Retrieves the results from a qeury
  *@author Marc Boorshtein, OctetString
@@ -40,7 +41,27 @@ public class RetrieveResults {
             SearchControls ctls = new SearchControls();
             int num;
             
-            ctls.setReturningAttributes(select.getSearchAttributes().length != 0 ? select.getSearchAttributes() : null);
+           //System.out.println("select.getSearchAttributes().length : " + select.getSearchAttributes().length);
+            
+            String[] fields = select.getSearchAttributes();
+            fields = fields != null ? fields : new String[0];
+            
+            ArrayList ar = new ArrayList();
+            
+            
+            for (int i=0, m=fields.length;i<m;i++) {
+            	if (! fields[i].equalsIgnoreCase("dn")) {
+            		ar.add(fields[i]);
+            	}
+            }
+            
+            String[] searchAttribs = new String[ar.size()];
+            
+            System.arraycopy(ar.toArray(),0,searchAttribs,0,ar.size());
+            
+             
+            
+            ctls.setReturningAttributes(searchAttribs.length != 0 ? searchAttribs : null);
             ctls.setSearchScope(select.getSearchScope());
             
             num = select.getMaxRecords();

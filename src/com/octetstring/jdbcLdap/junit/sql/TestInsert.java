@@ -41,14 +41,15 @@ public class TestInsert extends junit.framework.TestCase {
 	
 	protected void tearDown() throws java.lang.Exception {
 		if (doDelete) {
-			con.getContext().destroySubcontext("cn=Marc Boorshtein, OctetString,ou=Product Development");
+			con.getContext().destroySubcontext("cn=\"Marc Boorshtein, OctetString\",ou=Product Development");
+			
 		}
         	con.close();
     	}
     
     	protected void setUp() throws java.lang.Exception {
         	Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver");
-        	con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope","cn=Admin","manager");
+			con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope",System.getProperty("ldapUser"),System.getProperty("ldapPass"));
     	}
     
 	public void testParseStatement() throws Exception {
@@ -98,7 +99,7 @@ public class TestInsert extends junit.framework.TestCase {
 	
 	public void testInsertDirect() throws Exception {
 		doDelete = true;
-		String SQL = "INSERT INTO cn=Marc Boorshtein, OctetString,ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,?,?)";
+		String SQL = "INSERT INTO cn=\"Marc Boorshtein, OctetString\",ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,?,?)";
 		JdbcLdapInsert ins = new JdbcLdapInsert();
 		ins.init(con,SQL);
 		ins.setValue(1,"Marc Boorshtein, OctetString");
@@ -115,14 +116,15 @@ public class TestInsert extends junit.framework.TestCase {
 			fail("bad cn : " + rs.getString("cn"));
 		}
 		System.out.println("DN : " + rs.getString("DN"));
-		if (! rs.getString("DN").equals("cn=Marc Boorshtein, OctetString,ou=Product Development,dc=idrs,dc=com")) {
+		if (! rs.getString("DN").equals("cn=\"Marc Boorshtein, OctetString\",ou=Product Development,dc=idrs,dc=com")) {
 			fail("bad dn : " + rs.getString("DN"));
 		}
 	}
 	
 	public void testInsertStatement() throws Exception {
+		System.out.println("entering testInsert");
 		doDelete = true;
-		String SQL = "INSERT INTO cn=Marc Boorshtein, OctetString,ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,Boorshtein,Marc Boorshtein, OctetString)";
+		String SQL = "INSERT INTO cn=\"Marc Boorshtein, OctetString\", ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,Boorshtein,\"Marc Boorshtein, OctetString\")";
 		Statement stmt = con.createStatement();
 		int res = stmt.executeUpdate(SQL);
 		if (res < 1) {
@@ -137,14 +139,17 @@ public class TestInsert extends junit.framework.TestCase {
 			fail("bad cn : " + rs.getString("cn"));
 		}
 		System.out.println("DN : " + rs.getString("DN"));
-		if (! rs.getString("DN").equals("cn=Marc Boorshtein, OctetString,ou=Product Development,dc=idrs,dc=com")) {
+		if (! rs.getString("DN").equals("cn=\"Marc Boorshtein, OctetString\",ou=Product Development,dc=idrs,dc=com")) {
 			fail("bad dn : " + rs.getString("DN"));
 		}
+		System.out.println("leasving testInsert");
 	}
 	
 	public void testInsertPreparedStatement() throws Exception {
+		
+		
 		doDelete = true;
-		String SQL = "INSERT INTO cn=Marc Boorshtein, OctetString,ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,?,?)";
+		String SQL = "INSERT INTO cn=\"Marc Boorshtein, OctetString\",ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,?,?)";
 		PreparedStatement stmt = con.prepareStatement(SQL);
 		stmt.setString(1,"Marc");
 		stmt.setString(2,"Marc Boorshtein, OctetString");
@@ -166,7 +171,7 @@ public class TestInsert extends junit.framework.TestCase {
 			fail("bad cn : " + rs.getString("cn"));
 		}
 		System.out.println("DN : " + rs.getString("DN"));
-		if (! rs.getString("DN").equals("cn=Marc Boorshtein, OctetString,ou=Product Development,dc=idrs,dc=com")) {
+		if (! rs.getString("DN").equals("cn=\"Marc Boorshtein, OctetString\",ou=Product Development,dc=idrs,dc=com")) {
 			fail("bad dn : " + rs.getString("DN"));
 		}
 	}
@@ -195,7 +200,7 @@ public class TestInsert extends junit.framework.TestCase {
 			fail("bad cn : " + rs.getString("cn"));
 		}
 		System.out.println("DN : " + rs.getString("DN"));
-		if (! rs.getString("DN").equals("cn=Marc Boorshtein, OctetString,ou=Product Development,dc=idrs,dc=com")) {
+		if (! rs.getString("DN").equals("cn=\"Marc Boorshtein, OctetString\",ou=Product Development,dc=idrs,dc=com")) {
 			fail("bad dn : " + rs.getString("DN"));
 		}
 	}

@@ -63,7 +63,7 @@ public class TestDriver extends junit.framework.TestCase {
         try {
             Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver").newInstance();
             
-            Connection con = DriverManager.getConnection(System.getProperty("ldapConnString"),"cn=Admin","manager");
+            Connection con = DriverManager.getConnection(System.getProperty("ldapConnString") ,System.getProperty("ldapUser"),System.getProperty("ldapPass"));
         }
         catch (ClassNotFoundException ee) {
          ee.printStackTrace(System.out);
@@ -90,7 +90,7 @@ public class TestDriver extends junit.framework.TestCase {
         try {
             Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver").newInstance();
             
-            Connection con = DriverManager.getConnection(System.getProperty("ldapConnString") + "?java.naming.authentication:=simple&user:=cn=Admin&password:=manager");
+            Connection con = DriverManager.getConnection(System.getProperty("ldapConnString") + "?java.naming.authentication:=simple&user:=" + System.getProperty("ldapUser") + "&password:=" + System.getProperty("ldapPass"));
         }
         catch (ClassNotFoundException ee) {
          ee.printStackTrace(System.out);
@@ -195,7 +195,7 @@ public class TestDriver extends junit.framework.TestCase {
         try {
             Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver").newInstance();
             
-            con = DriverManager.getConnection(System.getProperty("ldapConnString") + "?user:=cn=Admin&password:=manager&SEARCH_SCOPE:=OBJECT_SCOPE");
+            con = DriverManager.getConnection(System.getProperty("ldapConnString") + "?user:=" + System.getProperty("ldapUser") + "&password:=" + System.getProperty("ldapPass") + "&SEARCH_SCOPE:=OBJECT_SCOPE");
         }
         catch (ClassNotFoundException ee) {
          
@@ -222,7 +222,7 @@ public class TestDriver extends junit.framework.TestCase {
         try {
             Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver").newInstance();
             
-            con = DriverManager.getConnection(System.getProperty("ldapConnString") + "?user:=cn=Admin&password:=manager&CONCAT_ATTS:=true");
+            con = DriverManager.getConnection(System.getProperty("ldapConnString") + "?user:=" + System.getProperty("ldapUser") + "&password:=" + System.getProperty("ldapPass") + "&CONCAT_ATTS:=true");
         }
         catch (ClassNotFoundException ee) {
          
@@ -249,7 +249,7 @@ public class TestDriver extends junit.framework.TestCase {
      try {
             Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver").newInstance();
             
-            con = DriverManager.getConnection(System.getProperty("ldapConnString") + "?user:=cn=Admin&password:=manager&CACHE_STATEMENTS:=true");
+            con = DriverManager.getConnection(System.getProperty("ldapConnString") + "?user:=" + System.getProperty("ldapUser") + "&password:=" + System.getProperty("ldapPass") + "&CACHE_STATEMENTS:=true");
         }
         catch (ClassNotFoundException ee) {
          

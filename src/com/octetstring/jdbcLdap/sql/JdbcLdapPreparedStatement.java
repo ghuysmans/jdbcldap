@@ -34,6 +34,9 @@ import java.io.*;
 public class JdbcLdapPreparedStatement extends JdbcLdapStatement implements java.sql.PreparedStatement {
     
     
+	
+	
+    
     
     /** Creates new JdbcLdapPreparedStatement */
     public JdbcLdapPreparedStatement(String sql, JndiLdapConnection con) throws SQLException {
@@ -56,8 +59,12 @@ public class JdbcLdapPreparedStatement extends JdbcLdapStatement implements java
      *@param val Value to insert
      */
     void setVal(int pos, String val) throws SQLException {
+        
+        
         this.stmt.setValue(pos-1,val);
     }
+
+	
     
     public void setUnicodeStream(int param, java.io.InputStream inputStream, int param2) throws java.sql.SQLException {
         char[] c = new char[param2];

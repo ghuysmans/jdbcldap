@@ -45,7 +45,7 @@ public class TestUpdate extends junit.framework.TestCase {
     
     protected void tearDown() throws java.lang.Exception {
         if (doDelete) {
-            con.getContext().destroySubcontext("cn=Marc Boorshtein, OctetString,ou=Product Development");
+            con.getContext().destroySubcontext("cn=\"Marc Boorshtein, OctetString\",ou=Product Development");
             con.getContext().destroySubcontext("cn=Marc Boorsh,ou=Product Development");
             con.getContext().destroySubcontext("cn=Steve Boorsh,ou=Product Development");
             con.getContext().destroySubcontext("cn=Sherry Boorsh,ou=Product Development");
@@ -56,11 +56,11 @@ public class TestUpdate extends junit.framework.TestCase {
     
     protected void setUp() throws java.lang.Exception {
         Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver");
-        con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope","cn=Admin","manager");
+		con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope",System.getProperty("ldapUser"),System.getProperty("ldapPass"));
         Statement stmt = con.createStatement();
         
         
-        stmt.executeUpdate("INSERT INTO cn=Marc Boorshtein, OctetString,ou=Product Development (objectClass,objectClass,objectClass,sn,cn,title) VALUES (top,person,organizationalPerson,Boorshtein,Marc Boorshtein, OctetString,test-single)");
+        stmt.executeUpdate("INSERT INTO cn=\"Marc Boorshtein, OctetString\",ou=Product Development (objectClass,objectClass,objectClass,sn,cn,title) VALUES (top,person,organizationalPerson,Boorshtein,\"Marc Boorshtein, OctetString\",test-single)");
         stmt.executeUpdate("INSERT INTO cn=Marc Boorsh,ou=Product Development (objectClass,objectClass,objectClass,sn,cn,title) VALUES (top,person,organizationalPerson,Boorsh,Marc Boorsh,test1-multi)");
         stmt.executeUpdate("INSERT INTO cn=Steve Boorsh,ou=Product Development (objectClass,objectClass,objectClass,sn,cn,title) VALUES (top,person,organizationalPerson,Boorsh,Steve Boorsh,test2-multi)");
         stmt.executeUpdate("INSERT INTO cn=Sherry Boorsh,ou=Product Development (objectClass,objectClass,objectClass,sn,cn,title) VALUES (top,person,organizationalPerson,Boorsh,Sherry Boorsh,test3-multi)");
@@ -288,5 +288,42 @@ public class TestUpdate extends junit.framework.TestCase {
         assertTrue(true);
         
     }
+    
+	public void testUpdateQuotePreparedStatement() throws Exception {
+			doDelete = true;
+			doDeleteMulti = true;
+        
+			String SQL = "UPDATE ou=Product Development SET sn=\"Boorshtein, Marc\" WHERE sn=?";
+			String search = "SELECT sn FROM ou=Product Development WHERE cn=*Boorsh";
+			PreparedStatement ps = con.prepareStatement(SQL);
+			Statement stmt = con.createStatement();
+        
+			//ps.setString(1,"Boorshtein");
+			ps.setString(1,"Boorsh");
+        
+			int count = ps.executeUpdate();
+			if (count < 3) {
+				fail("Error:, count is : " + count);
+				return;
+			}
+        
+			ResultSet rs = stmt.executeQuery(search);
+			count = 0;
+			while (rs.next()) {
+				if (! rs.getString("sn").equals("Boorshtein, Marc")) {
+					fail("sn is wrong : " + rs.getString("sn"));
+					return;
+				}
+				count ++;
+			}
+        
+			if (count < 3) {
+				fail("wrong count! : " + count);
+				return;
+			}
+        
+			assertTrue(true);
+        
+		}
     
 }

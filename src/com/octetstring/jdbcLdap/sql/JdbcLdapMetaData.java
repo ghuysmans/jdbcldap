@@ -73,7 +73,7 @@ public class JdbcLdapMetaData implements java.sql.ResultSetMetaData {
     }
     
     public java.lang.String getColumnName(int param) throws java.sql.SQLException {
-        return getCatalogName(param);
+        return getCatalogName(param -1);
     }
     
     public int getColumnType(int param) throws java.sql.SQLException {

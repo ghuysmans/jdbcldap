@@ -30,6 +30,9 @@ import javax.naming.directory.*;
  *@author Marc Boorshtein, OctetString
  */
 public class JdbcLdapUpdate extends com.octetstring.jdbcLdap.sql.statements.JdbcLdapSqlAbs implements com.octetstring.jdbcLdap.sql.statements.JdbcLdapSql {
+    /** A double quote character */
+    static final char QUOTE = '"';
+    
     /** The default search filter when no filter (or WHERE clause) is specified */
     static final String DEFAULT_SEARCH_FILTER = "(objectClass=*)";
     
@@ -145,19 +148,36 @@ public class JdbcLdapUpdate extends com.octetstring.jdbcLdap.sql.statements.Jdbc
         
         set = SQL.substring(begin,end);
         
-        toker = new StringTokenizer(set,COMMA);
+        LinkedList itok = explodeDN(set);
+        Iterator it;
         
-        fields = new String[toker.countTokens()];
-        vals = new String[toker.countTokens()];
-        offset = new int[toker.countTokens()];
         
-        for (i=0, j=0;toker.hasMoreTokens();i++) {
-            token = toker.nextToken().trim();
+        
+        
+        
+        //toker = new StringTokenizer(set,COMMA);
+        
+        fields = new String[itok.size()];
+        vals = new String[itok.size()];
+        offset = new int[itok.size()];
+        it = itok.iterator();
+        for (i=0, j=0;it.hasNext();i++) {
+            token = ((String) it.next()).trim();
+            
+            
+            
             fields[i] = token.substring(0,token.indexOf(EQUALS));
             vals[i] = token.substring(token.indexOf(EQUALS) + 1);
+            
+            
+            
             if (vals[i].equals(QMARK)) {
-		offset[j++] = i;
+				offset[j++] = i;
             }
+            else if (vals[i].charAt(0) == QUOTE) {
+				
+				vals[i] = vals[i].substring(1,vals[i].lastIndexOf(QUOTE));
+			}
         }
         
         border = j;

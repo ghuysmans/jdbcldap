@@ -63,7 +63,7 @@ public class JdbcLdapDelete
 
 	/** Creates new JdbcLdapSql using a connection and a SQL Statement*/
 	public void init(JndiLdapConnection con, String SQL) throws SQLException {
-
+		//System.out.println("sql " + SQL);
 		this.con = con;
 		int begin, end;
 		String tmpSQL = SQL.toLowerCase();
@@ -71,7 +71,9 @@ public class JdbcLdapDelete
 		Integer iscope;
 		begin = tmpSQL.indexOf(FROM) + FROM.length();
 		String sscope;
-
+		LinkedList ltok;
+		Iterator it;
+		
 		//is this simply delete one context or spcific entries
 		if (tmpSQL.indexOf(WHERE) == -1) {
 			//simple context
@@ -97,16 +99,20 @@ public class JdbcLdapDelete
 			if (iscope == null) {
 				throw new SQLException("Unrecognized Search Scope");
 			}
-
 			scope = iscope.intValue();
 
 			begin = tmpSQL.indexOf(WHERE) + WHERE.length();
-			where = con.nativeSQL(sqlArgsToLdap(SQL.substring(begin).trim()));
+			where = SQL.substring(begin).trim();
+			
+			
+			
+			where = con.nativeSQL(sqlArgsToLdap(  where ));
 
 			simple = false;
 		}
 
 		store = new SqlStore(SQL);
+		//System.out.println("from : " + from);
 		store.setFrom(from);
 		store.setSimple(simple);
 		store.setScope(this.scope);

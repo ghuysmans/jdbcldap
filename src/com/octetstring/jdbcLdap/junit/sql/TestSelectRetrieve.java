@@ -48,7 +48,7 @@ public class TestSelectRetrieve extends junit.framework.TestCase {
     
     protected void setUp() throws java.lang.Exception {
         Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver");
-        con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope","cn=Admin","manager");
+		con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope",System.getProperty("ldapUser"),System.getProperty("ldapPass"));
     }
     
     

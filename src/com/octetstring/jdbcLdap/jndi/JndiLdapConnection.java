@@ -33,6 +33,13 @@ import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSql;
  *@author Marc Boorshtein, OctetString
  */
 public class JndiLdapConnection implements java.sql.Connection {
+	public final static String LDAP_COMMA = "\\,";
+		public final static String LDAP_EQUALS = "\\=";
+		public final static String LDAP_PLUS = "\\+";
+		public final static String LDAP_LESS = "\\<";
+		public final static String LDAP_GREATER = "\\>";
+		public final static String LDAP_SEMI_COLON = "\\;";
+   
     /** Object scope */
     public static final String OBJECT_SCOPE = "objectScope";
     
@@ -45,6 +52,10 @@ public class JndiLdapConnection implements java.sql.Connection {
     /** Determines if Multiple value attributes are concattinated into one cell surrounded by [], ie
      *  [val1][val2][val3].  Must be true or false */
     public static final String CONCAT_ATTS = "CONCAT_ATTS";
+    
+    
+    /** Determines if multiple value attributes will cause rows to be expanded for each value of the attribute */
+    public static final String EXP_ROWS = "EXP_ROWS";
     
     /** Determines what type of authentication will be used, none, simple, sasl */
     public static final String AUTHENTICATION_TYPE = javax.naming.Context.SECURITY_AUTHENTICATION;
@@ -63,6 +74,9 @@ public class JndiLdapConnection implements java.sql.Connection {
     
     /** The JNDI factory for connecting */
     public static final String JNDI_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
+    
+    /** The JNDI DSML factory*/
+    public static final String JNDI_DSML_FACTORY = "com.sun.jndi.dsml.DsmlCtxFactory";
     
     /** user property */
     static final String USER  = "user";
@@ -88,6 +102,9 @@ public class JndiLdapConnection implements java.sql.Connection {
     /** Determinies if statements are cached */
     boolean cacheStatements;
     
+    /** Determines if rows are expanded */
+    boolean expandRow;
+    
     /** The default search scope */
     String scope;
     
@@ -100,9 +117,15 @@ public class JndiLdapConnection implements java.sql.Connection {
     /** Determines if attributes are concattintated */
     boolean concatAtts;
     
+    /** temporary string buffer */
+    StringBuffer tmpBuff;
+    
     /*
      *Public methods not part of java.sql.Connection
      */
+    
+    
+	
     
     
     /**
@@ -178,7 +201,7 @@ public class JndiLdapConnection implements java.sql.Connection {
         env = new Hashtable();
         this.concatAtts = false;
         boolean authFound = false;
-        
+        this.tmpBuff = new StringBuffer();
         
         Enumeration en = props.propertyNames();
 //        System.out.println("JndiLdapConnection.<init>: url="+url);
@@ -187,6 +210,7 @@ public class JndiLdapConnection implements java.sql.Connection {
         String prop;
         String user=null, pass=null ;
         env.put(Context.INITIAL_CONTEXT_FACTORY,JNDI_FACTORY);
+		//env.put(Context.INITIAL_CONTEXT_FACTORY,JNDI_DSML_FACTORY);
         env.put(Context.PROVIDER_URL,url.substring(ELIM_JDBC));
         
         while (en.hasMoreElements()) {
@@ -200,6 +224,9 @@ public class JndiLdapConnection implements java.sql.Connection {
             }
             else if (prop.equalsIgnoreCase(CACHE_STATEMENTS))     {
                 cacheStatements = props.getProperty(prop).equalsIgnoreCase("true");
+            }
+            else if (prop.equalsIgnoreCase(EXP_ROWS)) {
+            	this.expandRow = props.getProperty(prop).equalsIgnoreCase("true");
             }
             else if (prop.equalsIgnoreCase(SEARCH_SCOPE)) {
                 scope = props.getProperty(prop);
@@ -241,7 +268,7 @@ public class JndiLdapConnection implements java.sql.Connection {
         
         try {
             con = new InitialDirContext(env);
-//            System.out.println("JndiLdapConnection.<init>: called InitialDirContext");
+            //System.out.println("JndiLdapConnection.<init>: called InitialDirContext");
            
             
         }
@@ -281,16 +308,44 @@ public class JndiLdapConnection implements java.sql.Connection {
     
     public boolean isClosed() throws java.sql.SQLException {
         try {
-            return con == null || con.lookup(baseDN) == null;
+            return con == null || con.lookup("") == null;
         }
         catch (NamingException e) {
-            e.printStackTrace(System.out);
+            //e.printStackTrace(System.out);
             return false;
         }
         
         
         
     }
+    
+	/**
+			 * escaping the following characters per rfc2253 -- "," / "=" / "+" / "<" /  ">" / "#" / ";"
+			 * @param a variable passed in
+			 * @return a cleaned LDAP parameter
+			 */
+		public String ldapClean(String val) {
+			
+			char c;
+			for (int i=0,m= val.length(); i<m; i++) {
+				c = val.charAt(i);
+				
+				switch (c) {
+					case ',': 
+					case '=':
+					case '+':
+					case '<':
+					case '>':
+					case '#':
+					case ';': this.tmpBuff.setLength(0);
+								 tmpBuff .append('"').append(val).append('"');
+								return tmpBuff.toString();
+				}
+			}
+			
+			
+			return val;
+		}
     
     public void setCatalog(java.lang.String str) throws java.sql.SQLException {
     }
@@ -419,4 +474,32 @@ public class JndiLdapConnection implements java.sql.Connection {
         throw new SQLException("LDAP Does Not Support Transactions");
     }
     
+	/**
+	 * @return trie if expanding rows
+	 */
+	public boolean isExpandRow() {
+		return expandRow;
+	}
+
+	/**
+	 * @param b sets if expanding rows
+	 */
+	public void setExpandRow(boolean b) {
+		expandRow = b;
+	}
+
+	/**
+	 * @return
+	 */
+	public String getScope() {
+		return scope;
+	}
+
+	/**
+	 * @param string
+	 */
+	public void setScope(String string) {
+		scope = string;
+	}
+
 }

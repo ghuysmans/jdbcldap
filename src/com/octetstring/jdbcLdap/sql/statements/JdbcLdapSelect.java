@@ -150,7 +150,7 @@ public class JdbcLdapSelect extends com.octetstring.jdbcLdap.sql.statements.Jdbc
             this.fields = new String[toker.countTokens()];
             int i = 0;
             while (toker.hasMoreTokens()) {
-                this.fields[i] = toker.nextToken();
+                this.fields[i] = toker.nextToken().trim();
                 if (this.fields[i].equalsIgnoreCase(DN_FIELD)) this.retreiveDN = true;
                 i++;
             }

@@ -57,10 +57,11 @@ public class Update {
                 
                 con.modifyAttributes(buf.append(seres.getName()).append(',').append(store.getDistinguishedName()).toString(),mods);
                 count++;
+                //System.out.println("count : " + count);
             }
             
             enum.close();
-            
+            //System.out.println("final count : " + count);
             return count;
         }
         catch (NamingException ne) {

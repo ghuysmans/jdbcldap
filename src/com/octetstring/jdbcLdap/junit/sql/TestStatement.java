@@ -40,7 +40,7 @@ public class TestStatement extends junit.framework.TestCase {
     
     protected void setUp() throws java.lang.Exception {
         Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver");
-        con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope&CONCAT_ATTS:=false","cn=Admin","manager");
+		con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope",System.getProperty("ldapUser"),System.getProperty("ldapPass"));
     }
     
     /**
@@ -283,9 +283,9 @@ public class TestStatement extends junit.framework.TestCase {
             row = (HashMap) itRows.next();
             
             vals = row.values().toArray();
-            for (i=0;i<rsmd.getColumnCount() ;i++) {
+            for (i=1;i<=rsmd.getColumnCount() ;i++) {
                 
-                if (! vals[i].equals(rs.getString(rsmd.getColumnName(i)))) {
+                if (! vals[i-1].equals(rs.getString(rsmd.getColumnName(i)))) {
                     return false;
                 }
             }

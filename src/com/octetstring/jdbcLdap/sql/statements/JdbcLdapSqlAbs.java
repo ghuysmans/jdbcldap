@@ -201,6 +201,48 @@ public abstract class JdbcLdapSqlAbs implements JdbcLdapSql {
         return scope;
     }
     
+	protected LinkedList explodeDN(String dn) {
+				LinkedList rdnComponents = new LinkedList();
+
+				String dnstr = dn.toString();
+
+				boolean inquotes = false;
+				boolean escaped = false;
+
+				int currentStart = 0;
+				char current = 0;
+				for (int i = 0; i < dnstr.length(); i++) {
+					current = dnstr.charAt(i);
+					if (current == '\\') {
+						escaped = !escaped;
+					} else if (current == '\"' && !escaped) {
+						inquotes = !inquotes;
+					} else if (
+						(current == ',' || current == ';') && !escaped && !inquotes) {
+						String currdn = dnstr.substring(currentStart, i).trim();
+						if (currdn.endsWith("\\") && dnstr.charAt(i-1) == ' ') {
+							currdn = currdn + " ";
+						}
+						if (currdn.length() > 0) {
+							rdnComponents.add(currdn);
+							//System.err.println("Component: '" + currdn + "'");
+						}
+						currentStart = i + 1;
+					} else {
+						escaped = false;
+					}
+				}
+
+				if (dnstr.length() > currentStart) {
+					String currdn =
+						dnstr.substring(currentStart, dnstr.length()).trim();
+					if (currdn.length() > 0) {
+						rdnComponents.add(currdn);
+					}
+				}
+				return rdnComponents;
+			}
+    
     
     
 }

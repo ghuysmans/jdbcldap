@@ -44,7 +44,7 @@ public class TestDelete extends junit.framework.TestCase {
     
     protected void tearDown() throws java.lang.Exception {
         if (doDelete) {
-            con.getContext().destroySubcontext("cn=Marc Boorshtein, OctetString,ou=Product Development");
+            con.getContext().destroySubcontext("cn=\"Marc Boorshtein, OctetString\",ou=Product Development");
         }
         
         if (doDeleteMulti) {
@@ -60,9 +60,9 @@ public class TestDelete extends junit.framework.TestCase {
         
         
         Class.forName("com.octetstring.jdbcLdap.sql.JdbcLdapDriver");
-        con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope","cn=Admin","manager");
+        con  = (JndiLdapConnection) DriverManager.getConnection(System.getProperty("ldapConnString") + "?SEARCH_SCOPE:=subTreeScope",System.getProperty("ldapUser"),System.getProperty("ldapPass"));
         Statement stmt = con.createStatement();
-        stmt.executeUpdate("INSERT INTO cn=Marc Boorshtein, OctetString,ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,Boorshtein,Marc Boorshtein, OctetString)");
+        stmt.executeUpdate("INSERT INTO cn=\"Marc Boorshtein, OctetString\",ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,Boorshtein,\"Marc Boorshtein, OctetString\")");
         stmt.executeUpdate("INSERT INTO cn=Marc Boorsh,ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,Boorsh,Marc Boorsh)");
         stmt.executeUpdate("INSERT INTO cn=Steve Boorsh,ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,Boorsh,Steve Boorsh)");
         stmt.executeUpdate("INSERT INTO cn=Sherry Boorsh,ou=Product Development (objectClass,objectClass,objectClass,sn,cn) VALUES (top,person,organizationalPerson,Boorsh,Sherry Boorsh)");
@@ -72,12 +72,12 @@ public class TestDelete extends junit.framework.TestCase {
     public void testParse() throws Exception {
         doDelete = true;
         doDeleteMulti = true;
-        String SQL = "DELETE FROM cn=Marc Boorshtein, OctetString,ou=Product Development";
+        String SQL = "DELETE FROM cn=\"Marc Boorshtein, OctetString\",ou=Product Development";
         JdbcLdapDelete del = new JdbcLdapDelete();
         del.init(con,SQL);
         SqlStore store = del.getSqlStore();
         
-        if (! store.getFrom().equals("cn=Marc Boorshtein, OctetString,ou=Product Development")) {
+        if (! store.getFrom().equals("cn=\"Marc Boorshtein, OctetString\",ou=Product Development")) {
             fail("from incorrect : " + store.getFrom());
         }
         
@@ -91,7 +91,7 @@ public class TestDelete extends junit.framework.TestCase {
     public void testDeleteDirect() throws Exception {
         doDelete = false;
         doDeleteMulti = true;
-        String SQL = "DELETE FROM cn=Marc Boorshtein, OctetString,ou=Product Development";
+        String SQL = "DELETE FROM cn=\"Marc Boorshtein, OctetString\",ou=Product Development";
         JdbcLdapDelete del = new JdbcLdapDelete();
         del.init(con,SQL);
         int res = ((Integer) del.executeUpdate()).intValue();
@@ -102,7 +102,7 @@ public class TestDelete extends junit.framework.TestCase {
         }
         
         Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery("SELECT DN FROM ou=Product Development WHERE cn=Marc Boorshtein, OctetString");
+        ResultSet rs = stmt.executeQuery("SELECT DN FROM ou=Product Development WHERE cn=\"Marc Boorshtein, OctetString\"");
         
         if (rs.next()) {
             fail("not deleted");
@@ -114,7 +114,7 @@ public class TestDelete extends junit.framework.TestCase {
     public void testDeleteStatement() throws Exception {
         doDelete = false;
         doDeleteMulti = true;
-        String SQL = "DELETE FROM cn=Marc Boorshtein, OctetString,ou=Product Development";
+        String SQL = "DELETE FROM cn=\"Marc Boorshtein, OctetString\",ou=Product Development";
         Statement stmt = con.createStatement();
         int res = stmt.executeUpdate(SQL);
         
@@ -123,7 +123,7 @@ public class TestDelete extends junit.framework.TestCase {
             doDelete = true;
         }
         
-        ResultSet rs = stmt.executeQuery("SELECT DN FROM ou=Product Development WHERE cn=Marc Boorshtein, OctetString");
+        ResultSet rs = stmt.executeQuery("SELECT DN FROM ou=Product Development WHERE cn=\"Marc Boorshtein, OctetString\"");
         
         if (rs.next()) {
             fail("not deleted");
@@ -136,7 +136,7 @@ public class TestDelete extends junit.framework.TestCase {
     public void testDeletePreparedStatement() throws Exception {
         doDelete = false;
         doDeleteMulti = true;
-        String SQL = "DELETE FROM cn=Marc Boorshtein, OctetString,ou=Product Development";
+        String SQL = "DELETE FROM cn=\"Marc Boorshtein, OctetString\",ou=Product Development";
         PreparedStatement ps = con.prepareStatement(SQL);
         int res = ps.executeUpdate(SQL);
         
@@ -158,12 +158,12 @@ public class TestDelete extends junit.framework.TestCase {
     public void testDeleteMultiParse() throws Exception {
         doDelete = true;
         doDeleteMulti = true;
-        String SQL = "DELETE FROM cn=Marc Boorshtein, OctetString,ou=Product Development WHERE cn=Marc Boorshtein, OctetString AND sn=Boorshtein";
+        String SQL = "DELETE FROM cn=\"Marc Boorshtein, OctetString\",ou=Product Development WHERE cn=Marc Boorshtein, OctetString AND sn=Boorshtein";
         JdbcLdapDelete del = new JdbcLdapDelete();
         del.init(con,SQL);
         SqlStore store = del.getSqlStore();
         
-        if (! store.getFrom().equals("cn=Marc Boorshtein, OctetString,ou=Product Development")) {
+        if (! store.getFrom().equals("cn=\"Marc Boorshtein, OctetString\",ou=Product Development")) {
             fail("from incorrect : " + store.getFrom());
         }
         

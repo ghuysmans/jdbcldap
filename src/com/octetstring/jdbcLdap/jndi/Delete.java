@@ -37,6 +37,7 @@ public class Delete {
 		StringBuffer buf = new StringBuffer();
 		SqlStore store = del.getSqlStore();
 		int count = 0;
+		//System.out.println("from : " + store.getFrom());
 		if (store.getSimple()) {
 			try {
 				con.destroySubcontext(store.getFrom());
