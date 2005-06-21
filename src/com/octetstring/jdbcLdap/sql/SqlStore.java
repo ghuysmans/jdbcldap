@@ -79,7 +79,29 @@ public class SqlStore {
 	/** Stores a list of offsets */
 	ArrayList offsetList;
     
+    String[] orderby;
     
+    HashMap fieldMap;
+    
+    HashMap revFieldMap;
+
+	private Set dontAdd;
+
+	private String defOC;
+	
+	
+	/**
+	 * @return Returns the orderby.
+	 */
+	public String[] getOrderby() {
+		return orderby;
+	}
+	/**
+	 * @param orderby The orderby to set.
+	 */
+	public void setOrderby(String[] orderby) {
+		this.orderby = orderby;
+	}
     /**
      *Creates a new SqlStore
      *@param sql SQL statement being used
@@ -372,4 +394,54 @@ public class SqlStore {
 		this.offsetList = offsetList;
 	}
 
+	/**
+	 * @return Returns the fieldStore.
+	 */
+	public HashMap getFieldMap() {
+		return fieldMap;
+	}
+	/**
+	 * @param fieldStore The fieldStore to set.
+	 */
+	public void setFieldMap(HashMap fieldMap) {
+		this.fieldMap = fieldMap;
+	}
+	/**
+	 * @return Returns the revFieldMap.
+	 */
+	public HashMap getRevFieldMap() {
+		return revFieldMap;
+	}
+	/**
+	 * @param revFieldMap The revFieldMap to set.
+	 */
+	public void setRevFieldMap(HashMap revFieldMap) {
+		this.revFieldMap = revFieldMap;
+	}
+	/**
+	 * @param set
+	 */
+	public void setDontAdd(Set set) {
+		this.dontAdd = set;
+		
+	}
+	/**
+	 * @return
+	 */
+	public Set getDontAdd() {
+		return this.dontAdd;
+	}
+	/**
+	 * @param string
+	 */
+	public void setDefaultOC(String string) {
+		this.defOC = string;
+		
+	}
+	/**
+	 * @return
+	 */
+	public String getDefOC() {
+		return this.defOC;
+	}
 }

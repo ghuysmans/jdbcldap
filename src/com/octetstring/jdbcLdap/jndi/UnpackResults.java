@@ -70,6 +70,7 @@ public class UnpackResults {
 	
 	private boolean hasMoreEntries;
 	private LDAPSearchResults searchResults;
+	private HashMap revMap;
 
 	static {
 		HEX_TO_STRING = new HashMap();
@@ -150,7 +151,7 @@ public class UnpackResults {
 		return rows;
 	}
 
-	public void unpackJldap(LDAPSearchResults res,boolean dn,String fromContext,String baseContext) throws SQLException {
+	public void unpackJldap(LDAPSearchResults res,boolean dn,String fromContext,String baseContext,HashMap revMap) throws SQLException {
 		ArrayList tmprows;
 		ArrayList expRows = null;
 		
@@ -158,7 +159,7 @@ public class UnpackResults {
 		this.queue = null;
 		this.searchResults = res;
 		
-		
+		this.revMap = revMap;
 		
 		NamingEnumeration enumAtts;
 		Enumeration vals;
@@ -207,10 +208,12 @@ public class UnpackResults {
 	}
 	
 	
-	public void unpackJldap(LDAPMessageQueue queue,boolean dn,String fromContext,String baseContext) throws SQLException {
+	public void unpackJldap(LDAPMessageQueue queue,boolean dn,String fromContext,String baseContext,HashMap revMap) throws SQLException {
 		ArrayList tmprows;
 		ArrayList expRows = null;
 		SearchResult res;
+		
+		this.revMap = revMap;
 		
 		this.queue = queue;
 		this.searchResults = null;
@@ -333,11 +336,11 @@ public class UnpackResults {
 			//System.out.println("attribname : " + attribName);
 			LDAPAttribute attrib = (LDAPAttribute) attribArray[j]; //atts.getAttribute(attribName);
 			//System.out.println("working with : " + attrib);
-			field = (FieldStore) names.get(attrib.getName());
+			field = (FieldStore) names.get(this.getFieldName(attrib.getName()));
 			boolean existed = true;
 			if (field == null) {
 				field = new FieldStore();
-				field.name = attrib.getName();
+				field.name = this.getFieldName(attrib.getName());
 				names.put(field.name, field);
 				existed = false;
 			}
@@ -636,6 +639,12 @@ public class UnpackResults {
 		
 		try {
 			entry =  this.searchResults.next();
+			
+			if (this.con.isSPML()) {
+				String name = entry.getDN();
+				entry = new LDAPEntry(name + ",ou=Users," + con.getBaseContext(),entry.getAttributeSet());
+			}
+			
 			extractEntry(dn, fromContext, buff,entry);
 			
 		} catch (LDAPReferralException ref) {
@@ -671,6 +680,18 @@ public class UnpackResults {
 		} catch (LDAPException ldape)  {
 			throw new SQLNamingException(ldape);
 		}
+	}
+	
+	private String getFieldName(String name) {
+		
+		if (this.revMap != null) {
+			String nname = (String) this.revMap.get(name);
+			if (nname != null) {
+				return nname;
+			}
+		}
+		
+		return name;
 	}
 
 }

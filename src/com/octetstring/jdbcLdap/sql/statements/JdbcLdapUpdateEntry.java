@@ -109,6 +109,11 @@ public class JdbcLdapUpdateEntry
 		end = lsql.indexOf(DO);
 		dn = SQL.substring(begin,end).trim();
 		
+		if (con.getTableDefs().containsKey(dn)) {
+        	dn = ((TableDef) con.getTableDefs().get(dn)).getScopeBase();
+        }
+		
+		
 		where = null;
 		//Need to parse out the scope
 		int semi = dn.indexOf(SEMI_COLON); 
@@ -210,7 +215,7 @@ public class JdbcLdapUpdateEntry
 						offset.add(new Integer(params++));
 					}
 			
-					attribList.add(new Pair(attribName.trim(),attribValue.trim()));
+					attribList.add(new Pair(attribName.trim(),attribValue));
 					
 				}
 			}

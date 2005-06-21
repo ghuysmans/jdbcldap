@@ -16,6 +16,9 @@ package com.octetstring.jdbcLdap.browser;
 
 
 
+import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
+
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
@@ -31,6 +34,10 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+
+import com.novell.ldap.LDAPException;
+import com.novell.ldap.LDAPSearchRequest;
+import com.novell.ldap.rfc2251.RfcFilter;
 
 /**
  * @author Marc Boorshtein
@@ -205,11 +212,208 @@ class SearchOKPressed implements SelectionListener {
 		
 	}
 	
+	private static String byteString(byte[] value) {
+        String toReturn = null;
+        if (com.novell.ldap.util.Base64.isValidUTF8(value, true)) {
+            try {
+                toReturn = new String(value, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(
+                        "Default JVM does not support UTF-8 encoding" + e);
+            }
+        } else {
+            StringBuffer binary = new StringBuffer();
+            for (int i=0; i<value.length; i++){
+                //TODO repair binary output
+                //Every octet needs to be escaped
+                if (value[i] >=0) {
+                    //one character hex string
+                    binary.append("\\0");
+                    binary.append(Integer.toHexString(value[i]));
+                } else {
+                    //negative (eight character) hex string
+                    binary.append("\\"+
+                            Integer.toHexString(value[i]).substring(6));
+                }
+            }
+            toReturn = binary.toString();
+        }
+        return toReturn;
+    }
+	
+	private void stringFilter(Iterator itr, StringBuffer filter) {
+        int op=-1;
+        //filter.append('(');
+        String comp = null;
+        
+        boolean isFirst = true;
+        
+        while (itr.hasNext()){
+            Object filterpart = itr.next();
+            if (filterpart instanceof Integer){
+                op = ((Integer)filterpart).intValue();
+                switch (op){
+                    case LDAPSearchRequest.AND:
+                        comp = " AND ";
+                        break;
+                    case LDAPSearchRequest.OR:
+                        comp = " OR ";
+                        break;
+                    case LDAPSearchRequest.NOT:
+                        filter.append(" NOT ");
+                        break;
+                    case LDAPSearchRequest.EQUALITY_MATCH:{
+                        filter.append((String)itr.next());
+                        filter.append("='");
+                        byte[] value = (byte[])itr.next();
+                        filter.append(byteString(value)).append('\'');
+                        
+                        if (comp != null && itr.hasNext()) {
+                        	filter.append(comp);
+                        }
+                        
+                        break;
+                    }
+                    case LDAPSearchRequest.GREATER_OR_EQUAL:{
+                        filter.append((String)itr.next());
+                        filter.append(">=");
+                        byte[] value = (byte[])itr.next();
+                        filter.append(byteString(value));
+                        
+                        if (comp != null && itr.hasNext()) {
+                        	filter.append(comp);
+                        }
+                        
+                        break;
+                    }
+                    case LDAPSearchRequest.LESS_OR_EQUAL:{
+                        filter.append((String)itr.next());
+                        filter.append("<=");
+                        byte[] value = (byte[])itr.next();
+                        filter.append(byteString(value));
+                        
+                        if (comp != null && itr.hasNext()) {
+                        	filter.append(comp);
+                        }
+                        
+                        break;
+                    }
+                    case LDAPSearchRequest.PRESENT:
+                        filter.append((String)itr.next());
+                        filter.append(" IS NOT NULL ");
+                        
+                        if (comp != null && itr.hasNext()) {
+                        	filter.append(comp);
+                        }
+                        
+                        break;
+                    case LDAPSearchRequest.APPROX_MATCH:
+                        filter.append((String)itr.next());
+                        filter.append("~=");
+                        byte[] value = (byte[])itr.next();
+                        filter.append(byteString(value));
+                        
+                        if (comp != null && itr.hasNext()) {
+                        	filter.append(comp);
+                        }
+                        
+                        break;
+                    case LDAPSearchRequest.EXTENSIBLE_MATCH:
+                        String oid = (String)itr.next();
+
+                        filter.append((String)itr.next());
+                        filter.append(':');
+                        filter.append(oid);
+                        filter.append(":=");
+                        filter.append((String)itr.next());
+                        
+                        if (comp != null && itr.hasNext()) {
+                        	filter.append(comp);
+                        }
+                        
+                        break;
+                    case LDAPSearchRequest.SUBSTRINGS:{
+                        filter.append((String)itr.next());
+                        filter.append(" LIKE '");
+                        boolean noStarLast = false;
+                        while (itr.hasNext()){
+                            op = ((Integer)itr.next()).intValue();
+                            switch(op){
+                                case LDAPSearchRequest.INITIAL:
+                                    filter.append((String)itr.next());
+                                    filter.append('%');
+                                    noStarLast = false;
+                                    break;
+                                case LDAPSearchRequest.ANY:
+                                    if( noStarLast)
+                                        filter.append('%');
+                                    filter.append((String)itr.next());
+                                    filter.append('%');
+                                    noStarLast = false;
+                                    break;
+                                case LDAPSearchRequest.FINAL:
+                                    if( noStarLast)
+                                        filter.append('%');
+                                    
+                                    filter.append((String)itr.next());
+                                    break;
+                            }
+                            
+                            filter.append('\'');
+                            
+                            if (comp != null && itr.hasNext() ) {
+                            	if (isFirst) {
+                            		isFirst = false;
+                            	} else {
+                            		filter.append(comp);
+                            	}
+                            }
+                        }
+                        break;
+                    }
+                }
+            } else if (filterpart instanceof Iterator){
+                stringFilter((Iterator)filterpart, filter);
+            }
+            
+            if (comp != null && itr.hasNext()) {
+            	if (isFirst) {
+            		isFirst = false;
+            		filter.append('(');
+            	} else {
+            		filter.append(comp);
+            	}
+            }
+        }
+        
+        
+        
+        if (comp != null) {
+        	filter.append(')');
+        }
+    }
+	
 	String filterToWhere(String filter) {
 		if (filter.trim().length() == 0 || filter.trim().equalsIgnoreCase("(objectClass=*)") || filter.trim().equalsIgnoreCase("objectClass=*")) {
 			return "";
 		}
 		
+		
+		String where = "";
+		try {
+			RfcFilter rfcFilter = new RfcFilter(filter.trim());
+			StringBuffer buff = new StringBuffer();
+			
+			this.stringFilter(rfcFilter.getFilterIterator(),buff);
+			
+			where = buff.toString();
+			
+		} catch (LDAPException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		/*
 		if (filter.charAt(0) == '(') {
 			filter = filter.substring(1,filter.length() - 1);
 		}
@@ -218,139 +422,13 @@ class SearchOKPressed implements SelectionListener {
 		String where = parseFilter(filter);
 		if (where.charAt(0) == '(') {
 			where = where.substring(1,where.length() - 1);
-		}
+		}*/
 		return " WHERE " + where;
 		
 		 
 	}
 	
-	String parseFilter(String filter) {
-		
-		String sql = "(";
-		for (int i=0,m=filter.length();i<m;i++) {
-			char c = filter.charAt(i);
-			
-			switch (c) {
-				case ')' :
-				case ' ' : continue;
-				case '&' :
-					String and;
-					if (filter.charAt(i + 1) == '(' && filter.charAt(i + 2) == '(') {
-						and = stripParen(filter,i+1);
-					} else {
-						and = filter.substring(1);
-					}
-					sql += constructOp(and,true);
-					return sql + ")";
-				case '|' :
-					String or;
-					if (filter.charAt(i + 1) == '(' && filter.charAt(i + 2) == '(') {
-						or = stripParen(filter,i+1);
-					} else {
-						or = filter.substring(1);
-					}
-					sql += constructOp(or,false);
-					return sql + ")";
-				case '!' :
-					String not = stripParen(filter,i+1);
-					sql += "NOT " + parseFilter(not);
-					i += not.length();
-					
-					return sql + ")";
-				default :
-					//System.out.println("filter : " + filter);
-					
-					String tmpFilter = filter;
-					boolean isPresent = false;
-					if (tmpFilter.indexOf('*') != -1) {
-						int loc = tmpFilter.indexOf('*');
-						int eq = tmpFilter.indexOf('=');
-						
-						
-						
-						isPresent = loc == eq + 1 && loc == tmpFilter.length() - 1;
-						
-						
-						if (! isPresent) {
-							tmpFilter = tmpFilter.replaceAll("%","\\%");
-							tmpFilter = tmpFilter.replace('*','%');
-							tmpFilter = tmpFilter.replaceAll("[=]"," LIKE '");
-						} else {
-							tmpFilter = tmpFilter.substring(0,tmpFilter.indexOf('=')) + " IS NOT NULL ";
-						}
-					}
-				
-					if (! isPresent) {
-						tmpFilter = tmpFilter.replaceAll("=","='") + "'";
-					}
-					
-					filter = tmpFilter;
-					
-					
-					return filter;
-			}
-		}
-		
-		return "";
-		
-	}
 	
-	String stripParen(String filter,int start) {
-		
-		
-		
-		int count = 1;
-		int lookfor;
-		
-			start = start + 1;
-			count = 1;
-		
-		
-		
-		
-		int index = start;
-		while (count != 0) {
-			
-			char c = filter.charAt(index);
-			if (c == '(') {
-				count++;
-			} if (c == ')') {
-				count--;
-			}
-			
-			index++;
-		} 
-		
-		index -= 1;
-		
-		
-		
-		return filter.substring(start,index);
-	}
-	
-	String constructOp(String filter,boolean and) {
-		
-		boolean first = true;
-		String fsql = "";
-		for (int i=0,m=filter.length();i<m;i++) {
-			char c = filter.charAt(i);
-			if (c == '(') {
-				String part = stripParen(filter,i);
-				String sql = parseFilter(part);
-				i += part.length();
-				
-				if (first) {
-					first = false;
-				} else {
-					fsql += (and ? " AND " : " OR ");
-				}
-				
-				fsql += sql;
-			}
-		}
-		
-		return fsql;
-	}
 	
 	
 	

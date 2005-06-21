@@ -94,11 +94,30 @@ public class Insert {
 		//take all attributes and add it to addition list
 		try {
 			it = fieldsMap.iterator();
+			Set dontAdd = insert.getSqlStore().getDontAdd();
+			
+			boolean usedOC = false;
+			
 			while (it.hasNext()) {
 				
 				p = (Pair) it.next();
 				
+				
+				
+				if (dontAdd != null && dontAdd.contains(p.getNameUpperCase())) {
+					//this is an attribute that wont be added, most likely because 
+					
+					continue;
+				}
+				
+				
+				
 				field = p.getName();
+				
+				if (field.equalsIgnoreCase("objectClass")) {
+					usedOC = true;
+				}
+				
 				attrib = attribs.getAttribute(field);
 				
 				if (attrib == null) {
@@ -108,6 +127,12 @@ public class Insert {
 				
 				
 				attrib.addValue(p.getValue());
+			}
+			
+			if (! usedOC && insert.getSqlStore().getDefOC() != null) {
+				attrib = new LDAPAttribute("objectClass");
+				attrib.addValue(insert.getSqlStore().getDefOC());
+				attribs.add(attrib);
 			}
 			
 			//System.err.println("creating :" + JndiLdapConnection.getRealBase(insert));

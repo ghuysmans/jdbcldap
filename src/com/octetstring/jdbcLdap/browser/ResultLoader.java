@@ -25,6 +25,7 @@ import com.novell.ldap.LDAPDN;
 import com.novell.ldap.util.DN;
 import com.novell.ldap.util.RDN;
 import com.octetstring.jdbcLdap.jndi.*;
+
 import java.util.*;
 import org.eclipse.jface.dialogs.MessageDialog;
 
@@ -49,7 +50,7 @@ public class ResultLoader {
 	
 	private void addToTree(HashMap entrys,TreeObject root,ResultSet rs) throws SQLException {
 		String name = rs.getString("DN");
-		TreeObject to = (TreeObject) entrys.get(name);
+		TreeObject to = (TreeObject) entrys.get(name.toLowerCase());
 		if (to == null) {
 			String nname;
 			if (root.getName().equalsIgnoreCase("RootDSE")) {
@@ -58,6 +59,9 @@ public class ResultLoader {
 				nname = "cn=Unknown";
 			}  else {
 				nname = name.substring(0,name.lastIndexOf(root.toString()));
+				if (nname.endsWith(",")) {
+					nname = nname.substring(0,nname.length() - 1);
+				}
 			}
 			
 			
@@ -94,7 +98,7 @@ public class ResultLoader {
 			
 			to = new TreeObject(name,tmp,root.getBase(),false);
 			tmp.addChild(dnparts[0],to);
-			entrys.put(name,to);
+			entrys.put(name.toLowerCase(),to);
 			
 		}
 		
@@ -124,16 +128,19 @@ public class ResultLoader {
 	}
 	
 	public void loadResults(String sql,Table table, TreeViewer tv) throws SQLException {
-		JndiLdapConnection con = this.browser.getConnection();
+		Connection con =  this.browser.getConnection();
 		Statement stmt = this.browser.getConnection().createStatement();
 		TableColumn tc;
 				rows = new LinkedList();
 				HashMap row;
 				ResultSetMetaData rsmd;
 				HashMap entries = new HashMap();
+				TreeObject root = null;
+				if (! browser.isDB) {
+					root = new TreeObject(browser.baseDN,null,browser.baseDN,false);
+					entries.put(browser.baseDN,root);
+				}
 				
-				TreeObject root = new TreeObject(browser.baseDN,null,browser.baseDN,false);
-				entries.put(browser.baseDN,root);
 				//System.out.println("columns cleared");
 				try {
 					ResultSet rs = stmt.executeQuery(sql);
@@ -155,21 +162,40 @@ public class ResultLoader {
 			
 					//System.out.println("creating table");
 					int maxCols = 1;
-					tc = new TableColumn(table,SWT.LEFT);
-					tc.setText("DN");
-					tc.setWidth(50);	
+					
+					int start;
+					
+					if (! browser.isDB) {
+						tc = new TableColumn(table,SWT.LEFT);
+						tc.setText("DN");
+						tc.setWidth(50);
+						start = 2;
+					} else {
+						start = 1;
+						maxCols = 0;
+					}
 					
 					while (rs.next()) {
 						row = new HashMap();
 						rows.add(row);
-						TableItem tbli = new TableItem(table,SWT.NONE);
-						this.addToTree(entries,root,rs);
-						rsmd = rs.getMetaData();
-						String value = rs.getString("DN");
-						value = value != null ? value : "null";
+						TableItem tbli = null;
 						
-						tbli.setText(0,value);
-						for (int i=2,m=rsmd.getColumnCount();i<=m;i++) {
+						
+						
+						if (! browser.isDB) {
+							this.addToTree(entries,root,rs);
+							
+						}
+						tbli = new TableItem(table,SWT.NONE);
+						rsmd = rs.getMetaData();
+						String value = null;
+						if (! browser.isDB) {
+							value = rs.getString("DN");
+							value = value != null ? value : "null";
+							
+							tbli.setText(0,value);
+						}
+						for (int i=start,m=rsmd.getColumnCount();i<=m;i++) {
 							//table.setT
 							
 							if (rsmd.getColumnName(i).equalsIgnoreCase("DN")) {
@@ -192,7 +218,9 @@ public class ResultLoader {
 						}
 					}
 					//System.out.println("finised creation");
-					tv.setInput(root);
+					if (! browser.isDB) {
+						tv.setInput(root);
+					}
 				} catch (SQLException e) {
 					// TODO Auto-generated catch block
 					MessageDialog.openError(table.getShell(),"Error Occurred",e.toString());

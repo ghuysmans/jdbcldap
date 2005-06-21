@@ -24,6 +24,8 @@ import java.sql.*;
 import javax.naming.*;
 import com.novell.ldap.util.*;
 import com.novell.ldap.*;
+
+import java.io.FileNotFoundException;
 import java.net.*;
 
 /**
@@ -33,8 +35,20 @@ import java.net.*;
  */
 
 public class SQLNamingException extends java.sql.SQLException {
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	
     Exception e;
     
+    public String toString() {
+    	if (e instanceof LDAPException) {
+    		LDAPException le = (LDAPException) e;
+    		return le.toString() + " -- " + le.getLDAPErrorMessage();
+    	} else {
+    		return e.toString();
+    	}
+	}
     
     /** Creates new SQLNamingExcepton */
     public SQLNamingException(NamingException e) {
@@ -49,7 +63,15 @@ public class SQLNamingException extends java.sql.SQLException {
     	this.e = e;
     }
 
-    protected java.lang.Object clone() throws java.lang.CloneNotSupportedException {
+    /**
+	 * @param e1
+	 */
+	public SQLNamingException(Exception e1) {
+		
+		this.e = e1;
+	}
+
+	protected java.lang.Object clone() throws java.lang.CloneNotSupportedException {
         return super.clone();
     }
     

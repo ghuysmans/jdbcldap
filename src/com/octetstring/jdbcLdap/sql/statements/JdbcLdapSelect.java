@@ -22,8 +22,12 @@ package com.octetstring.jdbcLdap.sql.statements;
 
 import com.octetstring.jdbcLdap.jndi.*;
 import com.octetstring.jdbcLdap.sql.*;
+import com.octetstring.jdbcLdap.util.TableDef;
+
+import java.io.StreamTokenizer;
 import java.sql.*;
 import java.util.*;
+
 import javax.naming.*;
 import javax.naming.directory.*;
 
@@ -97,6 +101,13 @@ public class JdbcLdapSelect extends com.octetstring.jdbcLdap.sql.statements.Jdbc
     /** Determines if the DN was retrieved */
     boolean retreiveDN;
     
+    String[] sortBy;
+
+
+	private HashMap fieldMap;
+	
+	private HashMap revFieldMap;
+    
     /** Creates new JdbcLdapSelect */
     public JdbcLdapSelect() {
         super();
@@ -123,7 +134,9 @@ public class JdbcLdapSelect extends com.octetstring.jdbcLdap.sql.statements.Jdbc
         this.retreiveDN = sqlStore.getDN();
         this.args = new Object[sqlStore.getArgs()];
         this.scope = sqlStore.getScope();
-        
+        this.sortBy = sqlStore.getOrderby();
+        this.fieldMap = sqlStore.getFieldMap();
+        this.revFieldMap = sqlStore.getRevFieldMap();
     }
     
     /** Creates new JdbcLdapSql using a connection and a SQL Statement */
@@ -136,6 +149,9 @@ public class JdbcLdapSelect extends com.octetstring.jdbcLdap.sql.statements.Jdbc
         int begin,end;
         Integer scope;
         boolean whereFound = false;
+        
+        
+        
         //First, break the statement up into it's parts
         
         //Determine the attributes to return
@@ -151,6 +167,21 @@ public class JdbcLdapSelect extends com.octetstring.jdbcLdap.sql.statements.Jdbc
             int i = 0;
             while (toker.hasMoreTokens()) {
                 this.fields[i] = toker.nextToken().trim();
+                
+                String fieldLcase = this.fields[i].toLowerCase();
+                int beginas = fieldLcase.indexOf(" as ");
+                if (beginas != -1) {
+                	String fieldName = this.fields[i].substring(0,beginas).trim();
+                	String asName = this.fields[i].substring(beginas + 4).trim();
+                	this.fields[i] = fieldName;
+                	if (this.fieldMap == null) {
+                		this.fieldMap = new HashMap();
+                		this.revFieldMap = new HashMap();
+                	}
+                	this.fieldMap.put(asName,fieldName);
+                	this.revFieldMap.put(fieldName,asName);
+                }
+                
                 if (this.fields[i].equalsIgnoreCase(DN_FIELD)) this.retreiveDN = true;
                 i++;
             }
@@ -170,7 +201,21 @@ public class JdbcLdapSelect extends com.octetstring.jdbcLdap.sql.statements.Jdbc
             whereFound = true;
         }
         else {
-            this.from = SQL.substring(begin).trim();
+        	end = sql.indexOf(" order by ",begin);
+            if (end != -1) {
+            	this.from = SQL.substring(begin,end).trim();
+            	procOrderBy(SQL, end);
+            } else {
+            	this.from = SQL.substring(begin).trim();
+            }
+        	
+        }
+        
+        //determine if we are working with a table
+        if (con.getTableDefs().containsKey(from.trim())) {
+        	//this is a table defenition
+        	TableDef table = (TableDef) con.getTableDefs().get(from.trim());
+        	from = table.getScopeBase();
         }
         
         //determine if the search scope is specified, other wise retrieve it from the connection
@@ -195,18 +240,29 @@ public class JdbcLdapSelect extends com.octetstring.jdbcLdap.sql.statements.Jdbc
         
         if (whereFound) {
             begin = sql.indexOf(WHERE,end) + WHERE_SIZE;
-            this.where = con.nativeSQL(sqlArgsToLdap(SQL.substring(begin).trim()));
+            end = sql.indexOf(" order by ",begin);
+            if (end != -1) {
+            	this.where = con.nativeSQL(sqlArgsToLdap(SQL.substring(begin,end).trim()),this.fieldMap);
+            	procOrderBy(SQL, end);
+            } else {
+            	this.where = con.nativeSQL(sqlArgsToLdap(SQL.substring(begin).trim()),this.fieldMap);
+            }
         }
         else {
             this.where = DEFAULT_SEARCH_FILTER;
         }      
         
+        System.out.println("Sort by : " + this.sortBy );
+        
         sqlStore = new SqlStore(SQL);
+        sqlStore.setOrderby(this.sortBy);
         sqlStore.setWhere(where);
         sqlStore.setFrom(from);
         sqlStore.setFields(this.fields);
         sqlStore.setDN(this.retreiveDN);
         sqlStore.setScope(this.scope);
+        sqlStore.setFieldMap(this.fieldMap);
+        sqlStore.setRevFieldMap(this.revFieldMap);
         sqlStore.setArgs(args != null ? this.args.length : 0);
     }
     
@@ -214,6 +270,19 @@ public class JdbcLdapSelect extends com.octetstring.jdbcLdap.sql.statements.Jdbc
     
     
     /**
+	 * @param SQL
+	 * @param end
+	 */
+	private void procOrderBy(String SQL, int end) {
+		String order = SQL.substring(end + 10).trim();
+		StringTokenizer toker = new StringTokenizer(order,",");
+		this.sortBy = new String[toker.countTokens()];
+		for (int i=0,m=sortBy.length;i<m;i++) {
+			this.sortBy[i] = toker.nextToken();
+		}
+	}
+
+	/**
      *Returns the LDAP Search String
      */
     public String getSearchString() {

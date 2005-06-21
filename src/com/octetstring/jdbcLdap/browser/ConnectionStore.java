@@ -28,4 +28,7 @@ class ConnectionStore {
 	boolean followReferrals;
 	boolean isDsml;
 	boolean isSSL;
+	public boolean isSpml;
+	public boolean isJDBC;
+	public String extraUrl;
 }

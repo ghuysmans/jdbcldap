@@ -64,7 +64,7 @@ public class TestSqlToLdap extends junit.framework.TestCase {
         list.add("f5=5");
         
         SqlToLdap trans = new SqlToLdap();
-        LinkedList comp = trans.inOrder(expr);
+        LinkedList comp = trans.inOrder(expr,null);
         
         boolean match = true;
         for (i=0;i<list.size();i++) {
@@ -102,7 +102,7 @@ public class TestSqlToLdap extends junit.framework.TestCase {
         
         
         SqlToLdap trans = new SqlToLdap();
-        LinkedList comp = trans.inOrder(expr);
+        LinkedList comp = trans.inOrder(expr,null);
         
         boolean match = true;
         for (i=0;i<list.size();i++) {
@@ -141,7 +141,7 @@ public class TestSqlToLdap extends junit.framework.TestCase {
         
         
         SqlToLdap trans = new SqlToLdap();
-        LinkedList comp = trans.inOrder(expr);
+        LinkedList comp = trans.inOrder(expr,null);
         
         boolean match = true;
         for (i=0;i<list.size();i++) {
@@ -179,7 +179,7 @@ public class TestSqlToLdap extends junit.framework.TestCase {
         list.add("f5=5");
         
         SqlToLdap trans = new SqlToLdap();
-        LinkedList comp = trans.inOrder(expr);
+        LinkedList comp = trans.inOrder(expr,null);
         
         boolean match = true;
         for (i=0;i<list.size();i++) {
@@ -224,7 +224,7 @@ public class TestSqlToLdap extends junit.framework.TestCase {
         list.add(")");
         
         SqlToLdap trans = new SqlToLdap();
-        LinkedList comp = trans.inOrder(expr);
+        LinkedList comp = trans.inOrder(expr,null);
         
         boolean match = true;
         for (i=0;i<list.size();i++) {
@@ -261,7 +261,7 @@ public class TestSqlToLdap extends junit.framework.TestCase {
         
         
         
-        String ldap = trans.convertToLdap(sql);
+        String ldap = trans.convertToLdap(sql,null);
         /*
         System.out.println("sql : " + sql);
         System.out.println("ldap     : " + ldap);

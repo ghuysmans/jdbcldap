@@ -25,6 +25,7 @@ import com.octetstring.jdbcLdap.jndi.*;
 import com.octetstring.jdbcLdap.sql.*;
 import java.sql.*;
 import java.util.*;
+
 import javax.naming.*;
 import javax.naming.directory.*;
 import com.octetstring.jdbcLdap.util.*;
@@ -89,6 +90,10 @@ public class JdbcLdapInsert
 	/** Insertion modules */
 	Insert insert;
 
+	private Set dontAdd;
+
+	private String defOC;
+
 	public JdbcLdapInsert() {
 		super();
 		insert = new Insert();
@@ -117,18 +122,16 @@ public class JdbcLdapInsert
 		tmp = SQL.substring(begin, end);
 		this.dn = tmp.trim();
 		//System.out.println("dn : " + this.dn);
-		ltoks = explodeDN(this.dn);
-		//dnFields = LDAPDN.explodeDN(this.dn,false);
-		//tok = new StringTokenizer(this.dn,COMMA);
-		//System.out.println("dnFields length : " +dnFields.length);
-		dnFields = new String[ltoks.size()];
-		it = ltoks.iterator();
-		i=0;
-		while (it.hasNext()) {
-			dnFields[i] = (String) it.next();
-			//if (dnFields[i].indexOf('=') != -1) dnFields[i] = LDAPDN.normalize(dnFields[i]);
-			//System.out.println(dnFields[i]);
-			i++;
+		
+		
+		
+		TableDef def = null;
+		if (con != null) {
+			def = (TableDef) con.getTableDefs().get(dn);
+		}
+		if (def == null) {
+			ltoks = explodeDN(this.dn);
+			parseCtx(ltoks);
 		}
 
 		fieldsMap = new LinkedList();
@@ -140,11 +143,36 @@ public class JdbcLdapInsert
 
 		tok = new StringTokenizer(tmp, ",", false);
 		fields = new String[tok.countTokens()];
+		
+		HashMap addPattern = null;
+		
+		if (def != null) {
+			addPattern = def.getAddPatterns();
+		}
+		
 		for (i = 0; tok.hasMoreTokens(); i++) {
 			fields[i] = tok.nextToken();
+			if (addPattern != null) {
+				Object o = addPattern.get(fields[i]);
+				if (o != null) {
+					if (o instanceof HashMap) {
+						addPattern = (HashMap) o;
+					} else {
+						AddPattern pat = (AddPattern) o;
+						this.dn = pat.getAddPattern() + "," + def.getBase();
+						this.dontAdd = pat.getNotToAdd();
+						this.defOC = pat.getDefaultOC();
+					}
+				}
+			}
 			//System.out.println("fields : " + fields[i]);
 		}
 
+		if (def != null) {
+			ltoks = explodeDN(this.dn);
+			parseCtx(ltoks);
+		}
+		
 		//retrieves the field values and builds offset
 
 		begin = end + 1;
@@ -198,6 +226,28 @@ public class JdbcLdapInsert
 		store.setFieldOffset(offset);
 		store.setDnFields(this.dnFields);
 		store.setFieldsMap(fieldsMap);
+		store.setDontAdd(this.dontAdd);
+		store.setDefaultOC(this.defOC);
+	}
+
+	/**
+	 * @param ltoks
+	 */
+	private void parseCtx(LinkedList ltoks) {
+		int i;
+		Iterator it;
+		//dnFields = LDAPDN.explodeDN(this.dn,false);
+		//tok = new StringTokenizer(this.dn,COMMA);
+		//System.out.println("dnFields length : " +dnFields.length);
+		dnFields = new String[ltoks.size()];
+		it = ltoks.iterator();
+		i=0;
+		while (it.hasNext()) {
+			dnFields[i] = (String) it.next();
+			//if (dnFields[i].indexOf('=') != -1) dnFields[i] = LDAPDN.normalize(dnFields[i]);
+			//System.out.println(dnFields[i]);
+			i++;
+		}
 	}
 
 	/** Creates new JdbcLdapSql using a connection, a SQL Statement and a cached SqlStore*/
@@ -214,7 +264,8 @@ public class JdbcLdapInsert
 		this.dnFields = sqlStore.getDnFields();
 		this.fieldsMap = new LinkedList();
 		fieldsMap.addAll(store.getFieldsMap());
-
+		this.dontAdd = store.getDontAdd();
+		this.defOC = store.getDefOC();
 	}
 
 	/** Executes the current statement and returns the results */

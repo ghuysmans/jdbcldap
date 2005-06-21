@@ -57,7 +57,7 @@ public class ConfigStore {
 		}
 	}
 
-	public void saveConfig(String label,String user, String pass, String host, String port,String base,boolean isDSML,boolean followReferrals, boolean isSSL) throws Exception {
+	public void saveConfig(String label,String user, String pass, String host, String port,String base,boolean isDSML,boolean followReferrals, boolean isSSL, boolean isSpml, boolean isJdbc, String extraUrl) throws Exception {
 		ConnectionStore cs = new ConnectionStore();
 		Element svr = null;
 		NodeList nl = doc.getDocumentElement().getElementsByTagName("server");
@@ -86,6 +86,9 @@ public class ConfigStore {
 		cs.isDsml = isDSML;
 		svr.setAttribute("isDSML",Boolean.toString(isDSML));
 		
+		cs.isSpml = isSpml;
+		svr.setAttribute("isSPML",Boolean.toString(isSpml));
+		
 		cs.isSSL = isSSL;
 		svr.setAttribute("isSSL",Boolean.toString(isSSL));
 		
@@ -101,6 +104,11 @@ public class ConfigStore {
 		cs.user = user;
 		svr.setAttribute("user",user);
 		
+		cs.isJDBC = isJdbc;
+		svr.setAttribute("isJDBC",Boolean.toString(isJdbc));
+		
+		cs.extraUrl = extraUrl;
+		svr.setAttribute("extraUrl",cs.extraUrl);
 		this.configs.put(label,cs);
 		this.storeConfigs();
 		
@@ -129,11 +137,15 @@ public class ConfigStore {
 			tmp = svr.getAttribute("isSSL");
 			cs.isSSL = tmp.equals("1") || tmp.equalsIgnoreCase("true");
 			
+			tmp = svr.getAttribute("isJDBC");
+			cs.isJDBC = tmp.equals("1") || tmp.equalsIgnoreCase("true");
+			
 			cs.pass = svr.getAttribute("pass");
 			cs.port = svr.getAttribute("port");
 			cs.server = svr.getAttribute("server");
 			cs.user = svr.getAttribute("user");
 			cs.base = svr.getAttribute("base");
+			cs.extraUrl = svr.getAttribute("extraUrl");
 			this.configs.put(label,cs);
 		}
 	}

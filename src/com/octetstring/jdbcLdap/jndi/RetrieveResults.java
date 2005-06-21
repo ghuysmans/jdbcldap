@@ -26,6 +26,8 @@ import java.sql.*;
 import java.util.*;
 
 import com.novell.ldap.*;
+import com.novell.ldap.controls.LDAPSortControl;
+import com.novell.ldap.controls.LDAPSortKey;
 /**
  *Retrieves the results from a qeury
  *@author Marc Boorshtein, OctetString
@@ -58,6 +60,8 @@ public class RetrieveResults {
 				System.out.println("attrib : " + searchAttribs[i]);
 			}*/
 			
+			
+			
 			String useBase = JndiLdapConnection.getRealBase(select);
 			//System.out.println("useBase : " + useBase);
 			String filter = select.getFilterWithParams();
@@ -78,9 +82,27 @@ public class RetrieveResults {
 				constraints.setTimeLimit(select.getJDBCConnection().getMaxTimeLimit());
 			}
 			
-			if (select.getJDBCConnection().isDSML()) {
+			
+			
+			LDAPSortKey[] keys = null;
+			
+			if (select.getSqlStore().getOrderby() != null) {
+				keys = new LDAPSortKey[select.getSqlStore().getOrderby().length];
+				for (int i=0,m=keys.length;i<m;i++) {
+					keys[i] = new LDAPSortKey(this.getFieldName(select.getSqlStore().getOrderby()[i],select.getSqlStore().getFieldMap()));
+				}
+			}
+			
+			
+			
+			if (select.getJDBCConnection().isDSML() || select.getJDBCConnection().isSPML()) {
 				return con.search(useBase,select.getSearchScope(),filter,searchAttribs,false,constraints);
 			} else {
+				
+				if (keys != null) {
+					constraints.setControls(new LDAPControl[] {new LDAPSortControl(keys, true)});
+				} 
+				
 				return con.search(useBase,select.getSearchScope(),filter,searchAttribs,false,null,constraints);
 			}
 		} catch (LDAPException e) {
@@ -126,6 +148,16 @@ public class RetrieveResults {
     	}
     }
 
-    
+    private String getFieldName(String name,HashMap revMap) {
+		
+		if (revMap != null) {
+			String nname = (String) revMap.get(name);
+			if (nname != null) {
+				return nname;
+			}
+		}
+		
+		return name;
+	}
     
 }

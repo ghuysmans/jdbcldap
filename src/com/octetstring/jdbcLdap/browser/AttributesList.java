@@ -51,7 +51,12 @@ public class AttributesList implements IStructuredContentProvider {
 				base = " ";
 			}
 			
-			sql = "SELECT * FROM objectScope;" + base;
+			if (! browser.isSpml) {
+				sql = "SELECT * FROM objectScope;" + base;
+			} else {
+				sql = "SELECT view FROM objectScope;" + base;
+			}
+			
 			
 			
 			

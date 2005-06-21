@@ -20,6 +20,7 @@
 
 package com.octetstring.jdbcLdap.sql;
 import java.sql.*;
+import java.util.HashMap;
 
 import com.novell.ldap.LDAPMessageQueue;
 import com.novell.ldap.LDAPSearchResults;
@@ -166,9 +167,9 @@ public class JdbcLdapPreparedStatement extends JdbcLdapStatement implements java
     
     public java.sql.ResultSet executeQuery() throws java.sql.SQLException {
         if (this.con.isDSML()) {
-        	res.unpackJldap((LDAPSearchResults) stmt.executeQuery(),stmt.getRetrieveDN(),this.stmt.getSqlStore().getFrom(),con.getBaseDN());
+        	res.unpackJldap((LDAPSearchResults) stmt.executeQuery(),stmt.getRetrieveDN(),this.stmt.getSqlStore().getFrom(),con.getBaseDN(),this.stmt.getSqlStore().getRevFieldMap());
         } else {
-        	res.unpackJldap((LDAPMessageQueue) stmt.executeQuery(),stmt.getRetrieveDN(),this.stmt.getSqlStore().getFrom(),con.getBaseDN());
+        	res.unpackJldap((LDAPMessageQueue) stmt.executeQuery(),stmt.getRetrieveDN(),this.stmt.getSqlStore().getFrom(),con.getBaseDN(),this.stmt.getSqlStore().getRevFieldMap());
         }
     	
         

@@ -22,11 +22,17 @@ package com.octetstring.jdbcLdap.util;
 public class Pair {
 	String name;
 	String value;
-	
+	String nameUcase;
 	public Pair(String name, String value) {
 		this.name = name;
+		this.nameUcase = name.toUpperCase();
 		this.value = value;
 	}
+	
+	public String getNameUpperCase() {
+		return this.nameUcase;
+	}
+	
 	
 	/**
 	 * @return

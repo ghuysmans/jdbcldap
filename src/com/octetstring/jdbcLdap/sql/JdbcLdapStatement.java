@@ -197,18 +197,18 @@ public class JdbcLdapStatement implements java.sql.Statement {
 	public java.sql.ResultSet executeQuery(java.lang.String str)
 		throws java.sql.SQLException {
 		this.loadSQL(str);
-		if (this.con.isDSML()) {
+		if (this.con.isDSML() || this.con.isSPML()) {
 			res.unpackJldap(
 					(LDAPSearchResults) stmt.executeQuery(),
 					stmt.getRetrieveDN(),
 					stmt.getSqlStore().getFrom(),
-					con.getBaseDN());
+					con.getBaseDN(),stmt.getSqlStore().getRevFieldMap());
 		} else {
 			res.unpackJldap(
 				(LDAPMessageQueue) stmt.executeQuery(),
 				stmt.getRetrieveDN(),
 				stmt.getSqlStore().getFrom(),
-				con.getBaseDN());
+				con.getBaseDN(),stmt.getSqlStore().getRevFieldMap());
 		}
 
 

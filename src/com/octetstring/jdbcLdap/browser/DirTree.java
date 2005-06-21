@@ -49,7 +49,7 @@ public class DirTree implements ITreeContentProvider {
 		
 		JndiLdapConnection con = null;
 		try {
-			con = browser.getConnection();
+			con = (JndiLdapConnection) browser.getConnection();
 		}
 		catch (SQLException e) {
 			MessageDialog.openError(browser.tabs.getShell(),"Error",e.toString());
@@ -143,7 +143,7 @@ public class DirTree implements ITreeContentProvider {
 			//System.out.println("retrieving sql");
 			
 			while (rs.next()) {
-				TreeObject nto = new TreeObject(rs.getString(dnAttrib),to,con.getBaseDN());
+				TreeObject nto = new TreeObject(rs.getString(1),to,con.getBaseDN());
 				nto.setConId(to.getConId());
 				children.add(nto);
 			}

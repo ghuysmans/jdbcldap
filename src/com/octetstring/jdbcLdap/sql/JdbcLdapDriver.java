@@ -37,6 +37,9 @@ public class JdbcLdapDriver implements java.sql.Driver {
     /** Identifies the URL prefix for DSMLv2 Connections */
     public static final String DSML_URL_ID = "jdbc:dsml";
     
+    /** Identifies the URL prefix for SPML Connections */
+    public static final String SPML_URL_ID = "jdbc:spml";
+    
     /**Major Version of driver */
     public static final int MAJOR_VERSION = 0;
     
@@ -69,7 +72,7 @@ public class JdbcLdapDriver implements java.sql.Driver {
      *Accepts URLs in the form ldap://host:port/basedn
      */
     public boolean acceptsURL(java.lang.String str) throws java.sql.SQLException {
-        return str.substring(0,9).equalsIgnoreCase(URL_ID) || str.substring(0,9).equalsIgnoreCase(DSML_URL_ID);
+        return str.substring(0,9).equalsIgnoreCase(URL_ID) || str.substring(0,9).equalsIgnoreCase(DSML_URL_ID) || str.substring(0,9).equalsIgnoreCase(SPML_URL_ID);
     }
     
     public java.sql.Connection connect(java.lang.String str, java.util.Properties properties) throws java.sql.SQLException {

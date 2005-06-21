@@ -20,6 +20,9 @@
 
 package com.octetstring.jdbcLdap.jndi;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.*;
 
@@ -30,11 +33,14 @@ import javax.naming.directory.*;
 
 
 import java.util.*;
+
 import com.octetstring.jdbcLdap.sql.*;
 import com.octetstring.jdbcLdap.sql.statements.JdbcLdapInsert;
 import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSelect;
 
 import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSqlAbs;
+import com.octetstring.jdbcLdap.util.AddPattern;
+import com.octetstring.jdbcLdap.util.TableDef;
 
 /**
  * Wraps a Jndi Connection to an LDAP server
@@ -43,6 +49,11 @@ import com.octetstring.jdbcLdap.sql.statements.JdbcLdapSqlAbs;
 public class JndiLdapConnection implements java.sql.Connection {
 	/** URL parameter containing the DSMLv2 Base */
 	public static final String DSML_BASE_DN = "DSML_BASE_DN";
+	
+	public static final String SPML_IMPL = "SPML_IMPL";
+	
+	public static final String SPML_BASE_DN = "SPML_BASE_DN";
+	
 	public final static String LDAP_COMMA = "\\,";
 		public final static String LDAP_EQUALS = "\\=";
 		public final static String LDAP_PLUS = "\\+";
@@ -89,6 +100,7 @@ public class JndiLdapConnection implements java.sql.Connection {
     
     public static final String TIME_LIMIT = "TIME_LIMIT";
     
+    public static final String NO_SOAP = "NO_SOAP";
     
     /** OPTIONAL - States if transaction calls should be ignored, default to false */
     public static final String IGNORE_TRANSACTIONS = "IGNORE_TRANSACTIONS";
@@ -109,6 +121,9 @@ public class JndiLdapConnection implements java.sql.Connection {
     
     /** number of characters to eliminate 'jdbc:dsml: from the url */
     static final int ELIM_JDBC_DSML = 12;
+    
+    /** number of characters to eliminate 'jdbc:spml: from the url */
+    static final int ELIM_JDBC_SPML = 12;
     
     /** Contains all cached statements */
     HashMap statements;
@@ -149,7 +164,15 @@ public class JndiLdapConnection implements java.sql.Connection {
 	
 	private boolean isDsml;
     
+	private boolean isSPML;
+	
+	private boolean noSoap;
+	
+	HashMap tables;
 
+	private String url;
+
+	private String user;
     
     /*
      *Public methods not part of java.sql.Connection
@@ -231,6 +254,7 @@ public class JndiLdapConnection implements java.sql.Connection {
         this.con = connection;
         this.baseDN = "";
         this.cacheStatements = true;
+        this.tables = new HashMap();
     }
     /**
      *Initializes the Connection with a set of properties
@@ -238,7 +262,7 @@ public class JndiLdapConnection implements java.sql.Connection {
      *@param props Properties correspinding to Conneciton Constants
      */
     public JndiLdapConnection(String url, Properties props) throws SQLException {
-    	
+    	this.url = url;
         statements = new HashMap();
         sql2ldap = new SqlToLdap();
         env = new Hashtable();
@@ -247,9 +271,12 @@ public class JndiLdapConnection implements java.sql.Connection {
         this.tmpBuff = new StringBuffer();
         this.ignoreTransactions = false;
         isDsml = url.startsWith(JdbcLdapDriver.DSML_URL_ID);
+        isSPML = url.startsWith(JdbcLdapDriver.SPML_URL_ID);
+        String spmlImpl = null;
         
         Enumeration en = props.propertyNames();
 
+        this.tables = new HashMap();
         
  
         String prop;
@@ -259,7 +286,7 @@ public class JndiLdapConnection implements java.sql.Connection {
         boolean secure = false;
         boolean isLDAP = url.startsWith("jdbc:ldap");
         //determine if this is a ldap connection or dsmlv2
-        
+        this.noSoap = false;
         while (en.hasMoreElements()) {
             prop = (String) en.nextElement();
             if (prop.equalsIgnoreCase(SECURE)) {
@@ -296,14 +323,34 @@ public class JndiLdapConnection implements java.sql.Connection {
 				baseDN = "";
 			}
         } else {
-        	con = new DsmlConnection();
-        	try {
-				con.connect(url.substring(ELIM_JDBC_DSML),0);
-			} catch (LDAPException e1) {
-				throw new SQLNamingException(e1);
-			}
-			
-			baseDN = props.getProperty(DSML_BASE_DN,"");
+        	if (isDsml) {
+	        	con = new DsmlConnection();
+	        	try {
+					con.connect(url.substring(ELIM_JDBC_DSML),0);
+				} catch (LDAPException e1) {
+					throw new SQLNamingException(e1);
+				}
+				
+				baseDN = props.getProperty(DSML_BASE_DN,"");
+        	} else if (isSPML) {
+        		
+        		while (en.hasMoreElements()) {
+        			prop = (String) en.nextElement();
+        			if (prop.equalsIgnoreCase(SPML_IMPL)) {
+        				spmlImpl = props.getProperty(prop);
+        			}
+        		}
+        	
+        		en = props.propertyNames();
+        		con = new SPMLConnection(spmlImpl);
+	        	try {
+					con.connect(url.substring(ELIM_JDBC_SPML),0);
+				} catch (LDAPException e1) {
+					throw new SQLNamingException(e1);
+				}
+				
+				baseDN = props.getProperty(SPML_BASE_DN,"dc=spml,dc=com");
+        	}
         }
         
         while (en.hasMoreElements()) {
@@ -311,6 +358,7 @@ public class JndiLdapConnection implements java.sql.Connection {
             
             if (prop.equalsIgnoreCase(USER)) {
                 user = props.getProperty(prop);
+                this.user = user;
             }
             else if (prop.equalsIgnoreCase(PASSWORD)) {
                 pass = props.getProperty(prop);
@@ -339,6 +387,9 @@ public class JndiLdapConnection implements java.sql.Connection {
             } else if (prop.equalsIgnoreCase(SIZE_LIMIT)) {
             		this.size = Integer.parseInt(props.getProperty(prop));
             		
+            } else if (prop.equalsIgnoreCase(NO_SOAP)) {
+            	this.noSoap = props.getProperty(prop).equalsIgnoreCase("true");
+            	((DsmlConnection) this.con).setUseSoap(! noSoap);
             } else if (prop.equalsIgnoreCase(TIME_LIMIT)) {
 	        		this.time = Integer.parseInt(props.getProperty(prop));
 	        		if (time > 0) {
@@ -346,7 +397,17 @@ public class JndiLdapConnection implements java.sql.Connection {
 		        		genconstraints.setTimeLimit(time);
 		        		con.setConstraints(genconstraints);
 	        		}
-            }
+            } else if (prop.equalsIgnoreCase("TABLE_DEF")) {
+            	try {
+					this.generateTables(props.getProperty(prop));
+				} catch (FileNotFoundException e1) {
+					throw new SQLNamingException(e1);
+				} catch (IOException e1) {
+					throw new SQLNamingException(e1);
+				} catch (LDAPException e1) {
+					throw new SQLNamingException(e1);
+				}
+            } 
             
             
             else {
@@ -454,7 +515,9 @@ public class JndiLdapConnection implements java.sql.Connection {
     }
     
     public void rollback() throws java.sql.SQLException {
-        throw new SQLException("LDAP Does Not Support Transactions");
+        if (! this.ignoreTransactions) {
+        	throw new SQLException("LDAP Does Not Support Transactions");
+        }
     }
     
     public java.lang.String getCatalog() throws java.sql.SQLException {
@@ -517,7 +580,17 @@ public class JndiLdapConnection implements java.sql.Connection {
      *|(&((Field1=1)(Field2=2))(Field3=3))
      */
     public java.lang.String nativeSQL(java.lang.String str) throws java.sql.SQLException {
-        return sql2ldap.convertToLdap(str);
+        return sql2ldap.convertToLdap(str,null);
+    }
+    
+    /**
+     *Takes an SQL evaluation condition and translates it to LDAP form, ie:<br>
+     *Field1=1 AND Field2=2 OR Field3=3 <br>
+     *Becomes...<br>
+     *|(&((Field1=1)(Field2=2))(Field3=3))
+     */
+    public java.lang.String nativeSQL(java.lang.String str,HashMap fieldMap) throws java.sql.SQLException {
+        return sql2ldap.convertToLdap(str,fieldMap);
     }
     
     public java.sql.CallableStatement prepareCall(java.lang.String str, int param, int param2) throws java.sql.SQLException {
@@ -557,7 +630,7 @@ public class JndiLdapConnection implements java.sql.Connection {
     }
     
     public java.sql.DatabaseMetaData getMetaData() throws java.sql.SQLException {
-        return null;
+        return new JdbcLdapDBMetaData(this);
     }
     
     public void clearWarnings() throws java.sql.SQLException {
@@ -670,5 +743,102 @@ public class JndiLdapConnection implements java.sql.Connection {
 	 */
 	public boolean isDSML() {
 		return this.isDsml;
+	}
+
+	/**
+	 * @return
+	 */
+	public boolean isSPML() {
+		return this.isSPML;
+	}
+	
+	private void generateTables(String propsPath) throws FileNotFoundException, IOException, LDAPException {
+		Properties props = new Properties();
+		props.load(new FileInputStream(propsPath));
+		
+		int numTables = Integer.parseInt(props.getProperty("numTables"));
+		
+		for (int i=0;i<numTables;i++) {
+			String name = props.getProperty("table." + i + ".name");
+			String base = props.getProperty("table." + i + ".base");
+			String scope = props.getProperty("table." + i + ".scope");
+			String objectClasses = props.getProperty("table." + i + ".ocs");
+			
+			StringTokenizer toker = new StringTokenizer(objectClasses,",",false);
+			
+			String[] ocs = new String[toker.countTokens()];
+			int j=0;
+			while (toker.hasMoreTokens()) {
+				ocs[j++] = toker.nextToken();
+			}
+			
+			String addPattern = props.getProperty("table." + i + ".addPattern");
+			toker = new StringTokenizer(addPattern,"|");
+			
+			HashMap addPatternMap = new HashMap();
+			
+			while (toker.hasMoreTokens()) {
+				String pattern = toker.nextToken();
+				HashSet dontAddSet = new HashSet();
+				String defOC = null;
+				if (pattern.indexOf('#') != -1) {
+					String dontAdd = pattern.substring(pattern.indexOf('#') + 1);
+					StringTokenizer tokda = new StringTokenizer(dontAdd,",");
+					
+					while (tokda.hasMoreTokens()) {
+						dontAddSet.add(tokda.nextToken().toUpperCase());
+					}
+					pattern = pattern.substring(0, pattern.indexOf('#'));
+				}
+				
+				if (pattern.indexOf('&') != -1) {
+					defOC = pattern.substring(pattern.indexOf('&') + 1);
+					pattern = pattern.substring(0,pattern.indexOf('&'));
+				}
+				
+				AddPattern pat = new AddPattern(pattern,dontAddSet,defOC);
+				StringTokenizer tokpat = new StringTokenizer(pattern,",");
+				HashMap curr = addPatternMap;
+				while (tokpat.hasMoreTokens()) {
+					String node = tokpat.nextToken();
+					
+					Object o = curr.get(node);
+					if (o == null) {
+						if (tokpat.hasMoreTokens()) {
+							HashMap n = new HashMap();
+							curr.put(node,n);
+							curr = n;
+						} else {
+							curr.put(node,pat);
+						}
+					}
+				}
+			}
+			
+			TableDef tbl = new TableDef(name,base,scope,ocs,this.con,addPatternMap);
+			this.tables.put(name,tbl);
+		}
+		
+	}
+
+	/**
+	 * @return
+	 */
+	public String getURL() {
+		return this.url;
+	}
+
+	/**
+	 * @return
+	 */
+	public String getUser() {
+		return this.user;
+	}
+
+	/**
+	 * @return
+	 */
+	public Map getTableDefs() {
+		return this.tables;
 	}
 }

@@ -21,6 +21,8 @@
 package com.octetstring.jdbcLdap.sql.statements;
 import com.octetstring.jdbcLdap.jndi.*;
 import com.octetstring.jdbcLdap.sql.*;
+import com.octetstring.jdbcLdap.util.TableDef;
+
 import java.sql.*;
 import java.util.*;
 import javax.naming.*;
@@ -123,6 +125,11 @@ public class JdbcLdapUpdate extends com.octetstring.jdbcLdap.sql.statements.Jdbc
         begin = tmpSQL.indexOf(UPDATE) + UPDATE.length();
         end = tmpSQL.indexOf(SET);
         from = SQL.substring(begin,end).trim();
+        
+        if (con.getTableDefs().containsKey(from)) {
+        	from = ((TableDef) con.getTableDefs().get(from)).getScopeBase();
+        }
+        
         if (from.indexOf(";") != -1) {
             sscope = from.substring(0,from.indexOf(";")).trim(); 
             //System.out.println("sscope : " + sscope);       

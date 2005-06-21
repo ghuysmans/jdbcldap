@@ -143,8 +143,8 @@ public class SqlToLdap {
      *@param expr SQL Expresion to convert
      * @throws SQLException
      */
-    public String convertToLdap(String expr) throws SQLException {
-       LinkedList list = inOrder(expr);
+    public String convertToLdap(String expr,HashMap fieldMap) throws SQLException {
+       LinkedList list = inOrder(expr,fieldMap);
        
        Stack elements = new Stack();
        Stack opps = new Stack();
@@ -194,6 +194,16 @@ public class SqlToLdap {
             		
             		if (next.equalsIgnoreCase(SQL_NULL)) { 
             			tree = (Node) elements.peek();
+            			if (fieldMap != null) {
+            				
+            				String fieldName = tree.val;
+            				String newField = (String) fieldMap.get(fieldName);
+            				if (newField != null) {
+            					tree.val = newField;
+            				}
+            			} 
+            			
+            			
             			tree.val = "!(" + tree.val + "=*)";
             		} else if (next.equalsIgnoreCase(SQL_NOT)) {
             			String next2 = (String) it.next();
@@ -202,6 +212,16 @@ public class SqlToLdap {
             			}
             			
             			tree = (Node) elements.peek();
+            			
+            			if (fieldMap != null) {
+            				
+            				String fieldName = tree.val;
+            				String newField = (String) fieldMap.get(fieldName);
+            				if (newField != null) {
+            					tree.val = newField;
+            				}
+            			} 
+            			
             			tree.val = tree.val + "=*";
             			
             		} else {
@@ -236,7 +256,7 @@ public class SqlToLdap {
      *@param expr The SQL expression to be parsed
      *@return A LinkedList containing the parsed nodes
      */
-    public LinkedList inOrder(String expr) {
+    public LinkedList inOrder(String expr,HashMap fieldMap) {
         LinkedList list = new LinkedList();
         StringBuffer buf = new StringBuffer();
         int i;
@@ -250,9 +270,9 @@ public class SqlToLdap {
             if (curr == LEFT_PAR || curr == RIGHT_PAR) {
                 //add buffer to list
                 if (buf.length() != 0) {
-                    if (! addToList(list,buf)) {
+                    if (! addToList(list,buf,fieldMap)) {
  
-                        list.add(transformToFilter(new StringBuffer(buf.toString().trim())));
+                        list.add(transformToFilter(new StringBuffer(buf.toString().trim()),fieldMap));
                         buf.setLength(0);
                     }
                 }
@@ -263,7 +283,7 @@ public class SqlToLdap {
             else {
                 //if we are at a space, detrmine if we need to add to the list
                 if (curr == ' ') {
-                    if (! addToList(list,buf))
+                    if (! addToList(list,buf,fieldMap))
                         buf.append(curr);
                 }
                 else {
@@ -275,7 +295,7 @@ public class SqlToLdap {
         
         if (buf.length() != 0) {
         	
-        		String stmp = transformToFilter(buf);
+        		String stmp = transformToFilter(buf,fieldMap);
             list.add(stmp);
         }
         
@@ -286,14 +306,15 @@ public class SqlToLdap {
 	 * @param buf
 	 * @return
 	 */
-	private String transformToFilter(StringBuffer buf) {
+	private String transformToFilter(StringBuffer buf,HashMap fieldMap) {
 		String stmp = buf.toString().trim();
 
 		int like = stmp.toLowerCase().indexOf(" like ");
 		if (like != -1) {
 			buf.setLength(0);
 			buf.append(stmp);
-			buf.delete(like,6);
+			System.out.println("Buff : " + like + ";" + buf.length());
+			buf.delete(like, like + 6);
 			buf.insert(like,'=');
 			stmp = buf.toString();
 		}
@@ -311,6 +332,23 @@ public class SqlToLdap {
 				buf.delete(equals + 1,quote + 1);
 				stmp = buf.toString();
 			}
+			
+			if (fieldMap != null) {
+				equals = stmp.indexOf('=');
+				String fieldName = stmp.substring(0,equals).trim();
+				System.out.println("filedName " + fieldName);
+				String newField = (String) fieldMap.get(fieldName);
+				System.out.println("newfield " + newField);
+				if (newField != null) {
+					buf.setLength(0);
+					buf.append(newField).append(stmp.substring(equals));
+					stmp = buf.toString();
+					System.out.println(stmp);
+				}
+			} 
+			
+			
+			
 		}
 		
 		
@@ -345,7 +383,7 @@ public class SqlToLdap {
 		return stmp;
 	}
 
-	boolean addToList(LinkedList list, StringBuffer buf) {
+	boolean addToList(LinkedList list, StringBuffer buf,HashMap fieldMap) {
         int space = buf.toString().lastIndexOf(' ');
         boolean added = false;
         
@@ -354,7 +392,7 @@ public class SqlToLdap {
       
         
         if (buf.toString().trim().equalsIgnoreCase(SQL_NOT)) {
-            list.add(this.transformToFilter(buf));
+            list.add(this.transformToFilter(buf,fieldMap));
             
             buf.setLength(0);
         }
@@ -368,7 +406,7 @@ public class SqlToLdap {
             if (add.length() != 0) {
             		String tmp  = buf.substring(0,space).trim();
             		
-                list.add(this.transformToFilter(new StringBuffer(tmp)));
+                list.add(this.transformToFilter(new StringBuffer(tmp),fieldMap));
             }
             
             list.add(buf.substring(space + 1).trim());

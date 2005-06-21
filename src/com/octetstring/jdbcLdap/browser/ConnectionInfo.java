@@ -32,17 +32,27 @@ import org.eclipse.jface.dialogs.MessageDialog;
 public class ConnectionInfo {
 	Text server,port,user,password,pass2;
 	
-	Button fetchDns,followReferrals,dsml,ssl;
+	Button fetchDns,followReferrals,dsml,ssl,spml,ldap;
 	Combo base;
 	Combo name;
+	
+	Text extraURL;
 	
 	String sserver,sport,suser,spassword,sbase,sname;
 	
 	Shell shell;
 	
-	boolean doOpen,bfollowReferrals, bIsDSML,bSsl;
+	boolean doOpen,bfollowReferrals, bIsDSML,bSsl,bspml,bjdbc;
 	
 	ConfigStore configs;
+
+	protected Button jdbc;
+
+	protected Label serverlabel;
+
+	protected Label serverport;
+
+	public String textraURL;
 	
 	
 	public void showWindow(Display display) {
@@ -136,8 +146,8 @@ public class ConnectionInfo {
 		
 		
 		
-		l = new Label(parent,SWT.NONE);
-		l.setText("Server ");
+		serverlabel = new Label(parent,SWT.NONE);
+		serverlabel.setText("Server              ");
 		gr = new GridData();
 		gr.horizontalSpan = 1;
 		gr.horizontalAlignment = GridData.FILL;
@@ -149,8 +159,8 @@ public class ConnectionInfo {
 		gr.grabExcessHorizontalSpace = true;
 		server.setLayoutData(gr);
 		
-		l = new Label(parent,SWT.NONE);
-				l.setText("Port ");
+		serverport = new Label(parent,SWT.NONE);
+				serverport.setText("Port          ");
 				gr = new GridData();
 				gr.horizontalSpan = 1;
 				gr.horizontalAlignment = GridData.FILL;
@@ -229,26 +239,72 @@ public class ConnectionInfo {
 		pass2.setLayoutData(gr);
 		pass2.setEchoChar('*');
 		
+		l = new Label(parent,SWT.NONE);
+		l.setText("Extra URL Options");
+		gr = new GridData();
+		gr.horizontalSpan = 1;
+		gr.horizontalAlignment = GridData.FILL;
+								
+		this.extraURL = new Text(parent,SWT.BORDER);
+		gr = new GridData();
+		gr.horizontalSpan=3;
+		gr.horizontalAlignment = GridData.FILL;
+		gr.grabExcessHorizontalSpace = true;
+		extraURL.setLayoutData(gr);
+		
+		
 
 		ssl = new Button(parent,SWT.CHECK);
 		ssl.setText("Use SSL/TLS");
 		gr = new GridData();
-		gr.horizontalSpan = 2;
-		gr.horizontalAlignment = GridData.END;
+		gr.horizontalSpan = 4;
+		gr.horizontalAlignment = GridData.CENTER;
 		ssl.setLayoutData(gr);
 		ssl.setVisible(true);
 		
-		dsml = new Button(parent,SWT.CHECK);
-		dsml.setText("Use DSMLv2");
-		gr = new GridData();
-		gr.horizontalSpan = 2;
-		gr.horizontalAlignment = GridData.BEGINNING;
-		dsml.setLayoutData(gr);
+		
+		l = new Label(parent,SWT.NONE);
+		l.setText("Connection Type :");
+		
+		ldap = new Button(parent,SWT.RADIO);
+		ldap.setText("LDAPv3");
+		ldap.addSelectionListener(new SelectionListener() {
+
+			public void widgetSelected(SelectionEvent arg0) {
+				ConnectionInfo.this.serverlabel.setText("Server ");
+				ConnectionInfo.this.serverport.setText("Port ");
+				ConnectionInfo.this.base.setEnabled(true);
+				ConnectionInfo.this.fetchDns.setEnabled(true);
+				ConnectionInfo.this.ssl.setEnabled(true);
+			}
+
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}});
+		
+		dsml = new Button(parent,SWT.RADIO);
+		dsml.setText("DSMLv2");
+		//gr = new GridData();
+		//gr.horizontalSpan = 2;
+		//gr.horizontalAlignment = GridData.BEGINNING;
+		//dsml.setLayoutData(gr);
 		dsml.addSelectionListener(new SelectionListener() {
 
 			public void widgetSelected(SelectionEvent arg0) {
-				port.setEnabled(! dsml.getSelection());
-				ssl.setEnabled(! dsml.getSelection());
+				if (dsml.getSelection()) {
+					try {
+						Class.forName("com.novell.ldap.DSMLConnection");
+					} catch (Throwable e) {
+						MessageDialog.openError(shell,"DSMLv2 Not Available","This version of the SQL Directory Browser was not compiled with DSMLv2 support");
+						return;
+					}
+				}
+				
+				ConnectionInfo.this.serverlabel.setText("Server ");
+				ConnectionInfo.this.serverport.setText("Port ");
+				port.setEnabled(! dsml.getSelection() && ! spml.getSelection());
+				ssl.setEnabled(! dsml.getSelection() && ! spml.getSelection());
 				
 			}
 
@@ -256,7 +312,59 @@ public class ConnectionInfo {
 				// TODO Auto-generated method stub
 				
 			}});
-								
+			
+		spml = new Button(parent,SWT.RADIO);
+		spml.setText("SPML");
+		spml.addSelectionListener(new SelectionListener() {
+
+			public void widgetSelected(SelectionEvent arg0) {
+				if (spml.getSelection()) {
+					try {
+						Class.forName("com.novell.ldap.SPMLConnection");
+					} catch (Throwable e) {
+						MessageDialog.openError(shell,"SPML Not Available","This version of the SQL Directory Browser was not compiled with SPMLv2 support");
+						return;
+					}
+				}
+				port.setEnabled(! spml.getSelection()&& ! dsml.getSelection());
+				ssl.setEnabled(! spml.getSelection()&& ! dsml.getSelection());
+				if (spml.getSelection()) {
+					base.setText("ou=Users,dc=spml,dc=com");
+				}
+				base.setEnabled(! spml.getSelection());
+				ConnectionInfo.this.fetchDns.setEnabled(! spml.getSelection());
+				ConnectionInfo.this.serverlabel.setText("Server ");
+				ConnectionInfo.this.serverport.setText("Port ");
+			}
+
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}});
+		
+		jdbc = new Button(parent,SWT.RADIO);
+		jdbc.setText("JDBC Connection");
+		gr = new GridData();
+		gr.horizontalSpan = 6;
+		gr.horizontalAlignment = GridData.CENTER;
+		jdbc.setLayoutData(gr);
+		jdbc.addSelectionListener(new SelectionListener() {
+
+			public void widgetSelected(SelectionEvent arg0) {
+				ConnectionInfo.this.serverlabel.setText("JDBC Driver ");
+				ConnectionInfo.this.serverport.setText("JDBC URL ");
+				
+				ConnectionInfo.this.base.setEnabled(false);
+				ConnectionInfo.this.fetchDns.setEnabled(false);
+				ConnectionInfo.this.ssl.setEnabled(false);
+				
+			}
+
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}});
+		
 		followReferrals = new Button(parent,SWT.CHECK);
 		followReferrals.setText("Follow Referrals");
 		gr = new GridData();
@@ -276,7 +384,7 @@ public class ConnectionInfo {
 		followReferrals.setLayoutData(gr);
 		followReferrals.setVisible(false);
 					
-		fetchDns.addSelectionListener(new FetchBasePressed(shell,server,port,user,password,base,dsml,ssl));
+		fetchDns.addSelectionListener(new FetchBasePressed(shell,server,port,user,password,base,dsml,ssl,spml,extraURL));
 		Button ok = new Button(parent,SWT.PUSH);
 		ok.setText(" OK ");
 		parent.setDefaultButton(ok);
@@ -319,6 +427,10 @@ class OkPressed extends SelectionAdapter {
 		con.bfollowReferrals = con.followReferrals.getSelection();
 		con.bIsDSML = con.dsml.getSelection();
 		con.bSsl = con.ssl.getSelection();
+		con.bspml = con.spml.getSelection();
+	
+		con.bjdbc = con.jdbc.getSelection();
+		con.textraURL = con.extraURL.getText();
 		con.shell.dispose();	
 	}
 }
@@ -340,11 +452,11 @@ class QuitPressed extends SelectionAdapter {
 
 class FetchBasePressed extends SelectionAdapter {
 	Shell shell;
-	Text server,user,port,pass;
-	Button dsml;
+	Text server,user,port,pass,extraURL;
+	Button dsml,spml;
 	Combo base;
 	private Button ssl;
-	public FetchBasePressed(Shell shell,Text server,Text port,Text user,Text pass, Combo base,Button dsml,Button ssl) {
+	public FetchBasePressed(Shell shell,Text server,Text port,Text user,Text pass, Combo base,Button dsml,Button ssl,Button spml,Text extraURL) {
 		this.shell = shell;
 		this.server = server;
 		this.port = port;
@@ -352,21 +464,23 @@ class FetchBasePressed extends SelectionAdapter {
 		this.pass = pass;
 		this.base = base;
 		this.dsml = dsml;
+		this.spml = spml;
 		this.ssl = ssl;
+		this.extraURL  = extraURL;
 	}
 
 	public void widgetSelected(SelectionEvent event) {
 		try {
-			Connection con = JdbcLdapBrowser.createConnection(server.getText(),port.getText(),"",user.getText(),pass.getText(),false,dsml.getSelection(),ssl.getSelection());
+			Connection con = JdbcLdapBrowser.createConnection(server.getText(),port.getText(),"",user.getText(),pass.getText(),false,dsml.getSelection(),ssl.getSelection(),spml.getSelection(),extraURL.getText());
 			Statement s = con.createStatement();
 			ResultSet rs = s.executeQuery("SELECT namingContexts FROM objectScope;");
 			base.removeAll();
 			String first = null;
 			while (rs.next()) {
 				if (first == null) {
-					first = rs.getString("namingContexts");
+					first = rs.getString(1);
 				}
-				base.add(rs.getString("namingContexts"));
+				base.add(rs.getString(1));
 			}
 			
 			base.setText(first);
@@ -402,7 +516,18 @@ class ManageConfig extends SelectionAdapter {
 			cons.password.setText(cs.pass != null ? cs.pass : "");
 			cons.dsml.setSelection(cs.isDsml);
 			cons.followReferrals.setSelection(cs.followReferrals);
+			
+			
 			cons.ssl.setSelection(cs.isSSL);
+			cons.spml.setSelection(cs.isSpml);
+			cons.ldap.setSelection(! (cs.isSpml || cs.isDsml || cs.isJDBC));
+			
+			if (cons.jdbc.getSelection()) {
+				cons.serverlabel.setText("JDBC Driver ");
+				cons.serverlabel.setText("JDBC URL ");
+			}
+			
+			cons.extraURL.setText(cs.extraUrl);
 		}
 		else {
 			String name = null;
@@ -410,7 +535,7 @@ class ManageConfig extends SelectionAdapter {
 				try {
 					//System.out.println("base : " + cons.base.getText());
 					name = cons.name.getText();
-					cons.configs.saveConfig(cons.name.getText(),cons.user.getText(),cons.password.getText(),cons.server.getText(),cons.port.getText(),cons.base.getText(),cons.dsml.getSelection(),cons.followReferrals.getSelection(),cons.ssl.getSelection());
+					cons.configs.saveConfig(cons.name.getText(),cons.user.getText(),cons.password.getText(),cons.server.getText(),cons.port.getText(),cons.base.getText(),cons.dsml.getSelection(),cons.followReferrals.getSelection(),cons.ssl.getSelection(),cons.spml.getSelection(),cons.jdbc.getSelection(),cons.extraURL.getText());
 				} catch (Exception e1) {
 					e1.printStackTrace();
 					MessageDialog.openError(cons.shell,"Error Occurred When Loading Config",e1.toString());
@@ -473,8 +598,25 @@ class LoadCfg implements PaintListener,SelectionListener,ModifyListener {
 			cons.followReferrals.setSelection(cs.followReferrals);
 			cons.ssl.setSelection(cs.isSSL);
 			
-			cons.port.setEnabled(! cons.dsml.getSelection());
-			cons.ssl.setEnabled(! cons.dsml.getSelection());
+			cons.spml.setSelection(cs.isSpml);
+			cons.ldap.setSelection(! (cs.isSpml || cs.isDsml || cs.isJDBC));
+			
+			cons.jdbc.setSelection(cs.isJDBC);
+			
+			cons.port.setEnabled(! cons.dsml.getSelection() && ! cons.spml.getSelection());
+			cons.ssl.setEnabled(! cons.dsml.getSelection() && ! cons.spml.getSelection() && ! cons.jdbc.getSelection());
+			
+			if (cons.spml.getSelection() || cons.jdbc.getSelection()) {
+				cons.base.setEnabled(false);
+				cons.fetchDns.setSelection(false);
+			} 
+			
+			if (cons.jdbc.getSelection()) {
+				cons.serverlabel.setText("JDBC Driver ");
+				cons.serverlabel.setText("JDBC URL ");
+			}
+				
+			cons.extraURL.setText(cs.extraUrl);
 			
 			Control[]  ctls = cons.shell.getChildren();
 			for (int i=0,m=ctls.length;i<m;i++) {

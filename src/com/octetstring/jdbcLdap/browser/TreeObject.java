@@ -77,11 +77,11 @@ public class TreeObject {
 					} else {
 						this.name = new DN(name).explodeDN(false)[0];//  name.substring(0,name.indexOf(','));
 						
-						if (name.endsWith(parent.getBase()) || parent.getName().equalsIgnoreCase("RootDSE")) {
+						if (name.toLowerCase().endsWith(parent.getBase().toLowerCase()) || parent.getName().toLowerCase().equalsIgnoreCase("RootDSE")) {
 							this.base = name;
 						}
 						else {
-							if (name.lastIndexOf(topBase) == -1) {
+							if (name.toLowerCase().lastIndexOf(topBase.toLowerCase()) == -1) {
 								this.base = name;
 							} else {
 								this.base = name.substring(name.indexOf(',') + 1, name.lastIndexOf(topBase));

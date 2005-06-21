@@ -59,6 +59,13 @@ public class BrowserPrefs {
 		size.setText(Integer.toString(JdbcLdapBrowserApp.app.sizeLimit));
 		
 		l = new Label(top,SWT.NONE);
+		l.setText("JDBC Drivers Path : ");
+		
+		final Text driversPath = new Text(top,SWT.BORDER);
+		driversPath.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		driversPath.setText(JdbcLdapBrowserApp.app.driversDir);
+		
+		l = new Label(top,SWT.NONE);
 		l.setText("Maximum Time Per Operation : ");
 		
 		final Text time = new Text(top,SWT.BORDER);
@@ -66,9 +73,17 @@ public class BrowserPrefs {
 		time.setText(Integer.toString(JdbcLdapBrowserApp.app.timeLimit));
 		
 		l = new Label(top,SWT.NONE);
+		l.setText("Number of statements to store in history : ");
+		
+		final Text history = new Text(top,SWT.BORDER);
+		history.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		history.setText(Integer.toString(JdbcLdapBrowserApp.app.historyLimit));
+		
+		l = new Label(top,SWT.NONE);
 		l.setText("Auto execute SQL from dialogs : ");
 		final Button autoExecute = new Button(top,SWT.CHECK);
 		autoExecute.setSelection(JdbcLdapBrowserApp.app.autoExec);
+		
 		
 		
 		Button ok = new Button(top,SWT.PUSH);
@@ -80,6 +95,8 @@ public class BrowserPrefs {
 				JdbcLdapBrowserApp.app.sizeLimit = Integer.parseInt(size.getText());
 				JdbcLdapBrowserApp.app.timeLimit = Integer.parseInt(time.getText());
 				JdbcLdapBrowserApp.app.autoExec = autoExecute.getSelection();
+				JdbcLdapBrowserApp.app.driversDir = driversPath.getText();
+				JdbcLdapBrowserApp.app.historyLimit = Integer.parseInt(history.getText());
 				JdbcLdapBrowserApp.app.setPrefs();
 				shell.close();
 				
