@@ -343,6 +343,18 @@ public String getColumnClassName(int x) throws java.sql.SQLException {
 	return "";
 }
 
+@Override
+public <T> T unwrap(Class<T> iface) throws SQLException {
+  // TODO Auto-generated method stub
+  return null;
+}
+
+@Override
+public boolean isWrapperFor(Class<?> iface) throws SQLException {
+  // TODO Auto-generated method stub
+  return false;
+}
+
 // *********************************************************************
 //
 //                END OF PUBLIC INTERFACE

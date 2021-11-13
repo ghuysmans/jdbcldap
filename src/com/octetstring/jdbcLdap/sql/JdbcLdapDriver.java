@@ -23,6 +23,7 @@ package com.octetstring.jdbcLdap.sql;
 import java.sql.*;
 import com.octetstring.jdbcLdap.jndi.JndiLdapConnection;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Establishes a JNDI connection to an LDAP store.  URLs are in the form :<br>
@@ -125,6 +126,13 @@ public class JdbcLdapDriver implements java.sql.Driver {
     
     public boolean jdbcCompliant() {
         return JDBC_IV;
+    }
+
+
+    @Override
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        // TODO Auto-generated method stub
+        return null;
     }
     
 }

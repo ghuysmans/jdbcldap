@@ -42,6 +42,114 @@ public class JdbcLdapPreparedStatement extends JdbcLdapStatement implements java
 	
     
     
+    @Override
+    public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setClob(int parameterIndex, Reader reader) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setNClob(int parameterIndex, NClob value) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setNClob(int parameterIndex, Reader reader) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setNString(int parameterIndex, String value) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setRowId(int parameterIndex, RowId x) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
+        // TODO Auto-generated method stub
+        
+    }
+
     /** Creates new JdbcLdapPreparedStatement */
     public JdbcLdapPreparedStatement(String sql, JndiLdapConnection con) throws SQLException {
         super(con);

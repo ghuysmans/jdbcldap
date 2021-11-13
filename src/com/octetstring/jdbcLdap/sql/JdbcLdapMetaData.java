@@ -141,5 +141,21 @@ public class JdbcLdapMetaData implements java.sql.ResultSetMetaData {
     public boolean isWritable(int param) throws java.sql.SQLException {
         return false;
     }
+
+
+
+    @Override
+    public <T> T unwrap(Class<T> iface) throws SQLException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+    @Override
+    public boolean isWrapperFor(Class<?> iface) throws SQLException {
+        // TODO Auto-generated method stub
+        return false;
+    }
     
 }
