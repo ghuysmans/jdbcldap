@@ -29,6 +29,7 @@ import java.net.MalformedURLException;
 import java.sql.*;
 import com.novell.ldap.*;
 import com.novell.ldap.util.*;
+import com.novell.ldap.util.Base64;
 
 /**
  *Takes a JNDI Naming Enumeration and places it into a ArrayList of
