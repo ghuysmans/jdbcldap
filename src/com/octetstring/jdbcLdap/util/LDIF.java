@@ -362,7 +362,7 @@ public class LDIF {
 
 class Compare implements Comparator {
 	public int compare(Object v1, Object v2) {
-		return ((String) v1).compareTo(v2);
+		return ((String) v1).compareTo((String)v2);
 	}
 }
 
