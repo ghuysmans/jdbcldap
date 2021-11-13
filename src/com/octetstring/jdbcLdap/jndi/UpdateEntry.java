@@ -112,9 +112,9 @@ public class UpdateEntry {
 		try {
 			int count = 0;
 			if (stmt.getSearchScope() != 0) {
-				LDAPSearchResults enum = res.searchUpInsJldap(stmt);
-				while (enum.hasMore()) {
-					entry = enum.next();
+				LDAPSearchResults en = res.searchUpInsJldap(stmt);
+				while (en.hasMore()) {
+					entry = en.next();
 					buf.setLength(0);
 					
 					name = entry.getDN();
