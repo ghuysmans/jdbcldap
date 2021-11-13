@@ -254,6 +254,9 @@ public class TableDef {
 	 * @return
 	 */
 	private String getTypeName(String syntaxString) {
+		if (syntaxString == null) {
+			return null;
+		}
 		int index = syntaxString.indexOf('{');
 		if (index != -1) {
 			syntaxString = syntaxString.substring(0,index);
@@ -267,7 +270,6 @@ public class TableDef {
 	 */
 	private int getType(String syntaxString) {
 		Field[] fields = Types.class.getFields();
-		
 		String name = this.getTypeName(syntaxString);
 		
 		if (name == null) {
