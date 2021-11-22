@@ -1,0 +1,7 @@
+name: CI
+on: [push]
+jobs:
+  ci:
+    steps:
+      - name: Set up MySQL
+        run: sudo /etc/init.d/mysql start
