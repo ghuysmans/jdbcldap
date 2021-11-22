@@ -2,6 +2,7 @@ name: CI
 on: [push]
 jobs:
   ci:
+    runs-on: ubuntu-latest
     steps:
       - name: Set up MySQL
         run: sudo /etc/init.d/mysql start
