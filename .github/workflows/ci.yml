@@ -7,4 +7,4 @@ jobs:
       - name: Set up MySQL
         run: sudo /etc/init.d/mysql start
       - name: Test MySQL
-        run: echo "SELECT 2+3" |mysql -uroot
+        run: echo "SELECT 2+3" |mysql -uroot -proot
