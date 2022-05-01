@@ -304,6 +304,11 @@ public class JndiLdapConnection implements java.sql.Connection {
 	        } else {
 	        		con = new LDAPConnection();
 	        }
+
+	        LDAPSearchConstraints constraints = con.getSearchConstraints();
+	        constraints.setDereference(LDAPSearchConstraints.DEREF_ALWAYS);
+	        con.setConstraints(constraints);
+
 	        LDAPUrl ldapUrl;
 	        
 	        
