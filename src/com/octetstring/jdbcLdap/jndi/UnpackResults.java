@@ -349,7 +349,7 @@ public class UnpackResults {
 			if (bval == null) {
 				bval = new byte[0];
 			}
-			if (Base64.isLDIFSafe(bval)) {
+			if (Base64.isValidUTF8(bval, /*isUCS2Only=*/false)) {
 				svals = attrib.getStringValueArray();
 			} else {
 				byteVals = attrib.getByteValueArray();
