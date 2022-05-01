@@ -116,6 +116,9 @@ public class JndiLdapConnection implements java.sql.Connection {
     /** secure connection property */
     static final String SECURE = "secure";
     
+    /** starttls connection property */
+    static final String STARTTLS = "starttls";
+    
     /** number of characters to eliminate 'jdbc:' from the url */
     static final int ELIM_JDBC = 5;
     
@@ -284,6 +287,7 @@ public class JndiLdapConnection implements java.sql.Connection {
 
         this.preFetch = true;
         boolean secure = false;
+        boolean startTLS = false;
         boolean isLDAP = url.startsWith("jdbc:ldap");
         //determine if this is a ldap connection or dsmlv2
         this.noSoap = false;
@@ -293,6 +297,11 @@ public class JndiLdapConnection implements java.sql.Connection {
             		if (props.getProperty(prop) != null && props.getProperty(prop).equalsIgnoreCase("true")) {
             			secure = true;
             		}
+            } else if (prop.equalsIgnoreCase(STARTTLS)) {
+            		if (props.getProperty(prop) != null && props.getProperty(prop).equalsIgnoreCase("true")) {
+            			secure = true;
+            			startTLS = true;
+            		}
             }
         }
         
@@ -300,7 +309,11 @@ public class JndiLdapConnection implements java.sql.Connection {
         
         if (isLDAP) {
 	        if (secure) {
-        			con = new LDAPConnection(new LDAPJSSESecureSocketFactory());
+        			if (startTLS) {
+						con = new LDAPConnection(new LDAPJSSEStartTLSFactory());
+        			} else {
+						con = new LDAPConnection(new LDAPJSSESecureSocketFactory());
+        			}
 	        } else {
 	        		con = new LDAPConnection();
 	        }
@@ -423,6 +436,7 @@ public class JndiLdapConnection implements java.sql.Connection {
         }
         
         try {
+			if (startTLS) con.startTLS();
 			if (user != null && pass != null) con.bind(3,user,pass.getBytes());
         	
 		} catch (LDAPException e) {
