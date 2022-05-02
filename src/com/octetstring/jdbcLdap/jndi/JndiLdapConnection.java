@@ -134,6 +134,8 @@ public class JndiLdapConnection implements java.sql.Connection {
     /** LDAP connection */
     LDAPConnection con;
     
+    /** LDAP schema */
+    LDAPSchema schema;
     
     /**Stores properties for initialization */
     Hashtable env;
@@ -438,7 +440,7 @@ public class JndiLdapConnection implements java.sql.Connection {
         try {
 			if (startTLS) con.startTLS();
 			if (user != null && pass != null) con.bind(3,user,pass.getBytes());
-        	
+			schema = con.fetchSchema(con.getSchemaDN());
 		} catch (LDAPException e) {
 			throw new SQLNamingException(e);
 		}

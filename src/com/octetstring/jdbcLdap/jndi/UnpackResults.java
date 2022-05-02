@@ -351,6 +351,15 @@ public class UnpackResults {
 			}
 			if (Base64.isValidUTF8(bval, /*isUCS2Only=*/false)) {
 				svals = attrib.getStringValueArray();
+				if ("1.3.6.1.4.1.1466.115.121.1.41".equals(
+					con.schema.getAttributeSchema(attrib.getName()).getSyntaxString())) {
+					for (int i=0;i<svals.length;i++) {
+						svals[i] = svals[i]
+							.replaceAll("\\$", "\n")
+							.replaceAll("\\\\24", "\\$")
+							.replaceAll("(?i)(?<=\\\\)5C", "");
+					}
+				}
 			} else {
 				byteVals = attrib.getByteValueArray();
 				svals  = new String[byteVals.length];
