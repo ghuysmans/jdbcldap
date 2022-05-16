@@ -643,19 +643,23 @@ public class LdapResultSet implements java.sql.ResultSet {
 	}
 
 	public int getInt(int param) throws java.sql.SQLException {
-		return Integer.parseInt(getByNum(param));
+		String val = getByNum(param);
+		return val.length() == 0 ? 0 : Integer.parseInt(val);
 	}
 
 	public int getInt(java.lang.String str) throws java.sql.SQLException {
-		return Integer.parseInt(getByName(str));
+		String val = getByName(str);
+		return val.length() == 0 ? 0 : Integer.parseInt(val);
 	}
 
 	public long getLong(int param) throws java.sql.SQLException {
-		return Long.parseLong(getByNum(param));
+		String val = getByNum(param);
+		return val.length() == 0 ? 0 : Long.parseLong(val);
 	}
 
 	public long getLong(java.lang.String str) throws java.sql.SQLException {
-		return Long.parseLong(getByName(str));
+		String val = getByName(str);
+		return val.length() == 0 ? 0 : Long.parseLong(val);
 	}
 
 	public java.sql.ResultSetMetaData getMetaData()
